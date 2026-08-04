@@ -513,16 +513,12 @@ const estado = {
   cargando: true
 };
 
-/* Misma convención de semana que la cocina: lunes como día 1. */
-function claveSemana(d){
-  d = d ? new Date(d) : new Date();
-  const dia = (d.getDay() + 6) % 7;
-  d.setDate(d.getDate() - dia);
-  return d.getFullYear() + "-W" + String(
-    Math.ceil(((d - new Date(d.getFullYear(),0,1)) / 86400000 + 1) / 7)
-  ).padStart(2,"0");
-}
+/* La cocina identifica la semana por la FECHA DEL LUNES (menu:2026-08-03),
+   no por número de semana. Si acá se calcula distinto, las dos apps escriben
+   en llaves diferentes y no se ven nunca. Una sola fórmula, la de la cocina. */
 function lunesDe(){ const d=new Date(); d.setDate(d.getDate()-((d.getDay()+6)%7)); return d; }
+function iso(d){ return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
+function claveSemana(){ return iso(lunesDe()); }
 function fechaCorta(i){
   const d = lunesDe(); d.setDate(d.getDate()+i);
   return d.getDate() + " " + ["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic"][d.getMonth()];
