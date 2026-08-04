@@ -3839,7 +3839,13 @@ document.addEventListener("keydown",e=>{
 });
 
 render();
-iniciarAlmacenamiento().then(loadShared);
+iniciarAlmacenamiento().then(async () => {
+  /* Las recetas base se publican a la base la primera vez. Así Control las
+     lee de un solo lugar en vez de tener su propia copia — el mismo problema
+     que teníamos con los nombres escritos en tres partes. */
+  try{ if(!(await sget("recetas:base"))) await sset("recetas:base", RECETAS_BASE); }catch(e){}
+  await loadShared();
+});
 
 /* Service worker: al abrir el ícono se busca la versión publicada. Se acabó
    el "no sé si estoy usando la última". */
