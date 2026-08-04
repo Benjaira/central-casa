@@ -1,13 +1,17 @@
-/* Service worker · Central de la Casa
-   Regla: el HTML va SIEMPRE a la red primero. Es lo que resuelve el "no sé si
-   estoy en la última versión": cada vez que se abre el ícono, se trae la
-   versión publicada. El caché es sólo la red de emergencia si no hay internet.
-   Los íconos y las tipografías, al revés: caché primero, no cambian nunca. */
-const V = "cc-v1";
-const BASE = ["/icon-192.png","/icon-512.png","/apple-touch-icon.png"];
+/* Service worker · Central de la Casa · v2
+   Regla 1: el HTML va SIEMPRE a la red primero — así cada apertura trae la
+   última versión publicada. El caché es sólo respaldo sin internet.
+   Regla 2: cada app es su propio respaldo. El sw NUNCA responde /control/
+   con /cocina/ ni al revés: antes de esta versión, un fallback cruzado hacía
+   exactamente eso y Control no cargaba. */
+const V = "cc-v2";
+const BASE = ["./icon-192.png","./icon-512.png","./apple-touch-icon.png",
+              "./icon-control-192.png","./icon-control-512.png","./apple-touch-icon-control.png"];
 
 self.addEventListener("install", e => {
-  e.waitUntil(caches.open(V).then(c => c.addAll(BASE)).then(() => self.skipWaiting()));
+  e.waitUntil(caches.open(V)
+    .then(c => Promise.allSettled(BASE.map(u => c.add(u))))
+    .then(() => self.skipWaiting()));
 });
 
 self.addEventListener("activate", e => {
@@ -29,7 +33,11 @@ self.addEventListener("fetch", e => {
         const copia = r.clone();
         caches.open(V).then(c => c.put(req, copia));
         return r;
-      }).catch(() => caches.match(req).then(r => r || caches.match("/cocina/")))
+      }).catch(() =>
+        caches.match(req).then(r => r || new Response(
+          "<meta charset='utf-8'><body style='font-family:system-ui;background:#FAF7F0;color:#1C2026;display:flex;align-items:center;justify-content:center;height:100vh;text-align:center'><div><b>Sin conexión</b><br>Esta pantalla necesita internet la primera vez.<br>Revisa la red y vuelve a abrir.</div></body>",
+          { headers: { "Content-Type": "text/html; charset=utf-8" } }
+        )))
     );
   } else {
     e.respondWith(caches.match(req).then(r => r || fetch(req).then(res => {
