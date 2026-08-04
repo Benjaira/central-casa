@@ -118,7 +118,7 @@ main{padding:14px 14px 96px}
   <button id="atras" style="display:none">← Volver</button>
   <div class="h1">CONTROL DE LA CASA</div>
   <span id="estado" class="mal">○ conectando…</span>
-  <span class="build">v2.2 · 04 ago</span>
+  <span class="build">v2.3 · 04 ago</span>
 </header>
 <main id="app"><div class="vacio">Cargando…</div></main>
 <div id="barra-guardar"><button id="guardar">Guardar el menú de la semana</button></div>
@@ -144,7 +144,7 @@ main{padding:14px 14px 96px}
    ========================================================================== */
 (function (root) {
   "use strict";
-console.log("Control de la Casa · v2.2 · 04 ago");
+console.log("Control de la Casa · v2.3 · 04 ago");
 
   /* ---- Reglas de clave del storage subyacente -----------------------------
      Sin espacios, sin / \ ' " y bajo 200 caracteres. Normalizamos en vez de
@@ -970,6 +970,16 @@ const RECETAS_EXTRA = {
    ========================================================================== */
 "use strict";
 
+/* Este archivo sólo vive servido desde la web. Abierto con doble clic desde
+   Descargas parece funcionar a medias y confunde — mejor que se explique. */
+if(location.protocol === "file:"){
+  document.addEventListener("DOMContentLoaded", () => {
+    document.body.innerHTML = '<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#FAF7F0;color:#1C2026;font-family:system-ui;text-align:center;padding:30px"><div style="max-width:440px"><div style="font-weight:800;font-size:1.3rem">Este archivo no es la app</div><div style="width:60px;height:5px;background:#F0A834;border-radius:3px;margin:14px auto 18px"></div><p style="line-height:1.6;font-size:.95rem">Este archivo es para <b>subirlo a GitHub</b>. La app vive siempre en:</p><p><a href="https://benjaira.github.io/central-casa/control/" style="color:#4a6d8c;font-weight:700;word-break:break-all">benjaira.github.io/central-casa/control/</a></p><p style="font-size:.82rem;color:#8a8578;line-height:1.5">Abierto desde el disco no puede sincronizar ni actualizarse.</p></div></div>';
+  });
+  throw new Error("file:// - este archivo se sube, no se abre");
+}
+
+
 const DIAS  = ["Lunes","Martes","Miércoles","Jueves","Viernes","Sábado","Domingo"];
 const MESES = ["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic"];
 let S = Store.create({ prefix:"", shared:true });
@@ -1109,6 +1119,15 @@ function pintar(){
   b.classList.toggle("on", estado.sucio && estado.vista === "editar");
   const atras = document.getElementById("atras");
   atras.style.display = estado.vista === "home" ? "none" : "";
+}
+
+/* Precio en pantalla: si el producto varió ≥25% o su precio tiene más de 60
+   días, se muestra con "≈". Mismo criterio que la cocina, autocontenido acá
+   — depender de una función de otro archivo fue lo que congeló la v2.2. */
+function precioTxt(p){
+  if(!p || !p.p) return "";
+  const viejo = p.pF && (Date.now() - new Date(p.pF + "T12:00:00")) > 60*86400000;
+  return (p.vol || viejo ? "\u2248 $" : "$") + p.p.toLocaleString("es-CL");
 }
 
 function chipPauta(v){
