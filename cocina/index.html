@@ -3553,6 +3553,15 @@ function festejar(){
 async function cargarRecetario(){
   const propias = (await sget("recetario")) || {};
   RECETAS = Object.assign({}, RECETAS_BASE, propias);
+  /* El recetario vive en la base, no sólo en este archivo. Sin este merge,
+     una receta aprobada desde Control sería invisible acá: la tablet
+     descartaría el menú entero por traer un id desconocido, y la aprobación
+     de B desaparecería en silencio. Regla: lo de la base manda. */
+  try{
+    const rb = await sget("recetas:base");
+    const rp = await sget("recetario");
+    Object.assign(RECETAS, rb || {}, rp || {});
+  }catch(e){}
   prepararRecetas();
   const m = await sget("menu:"+WEEK_KEY);
   const valido = Array.isArray(m) && m.length===7 && m.every(id=>RECETAS[id]);
