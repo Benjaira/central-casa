@@ -3555,8 +3555,12 @@ async function cargarRecetario(){
   RECETAS = Object.assign({}, RECETAS_BASE, propias);
   prepararRecetas();
   const m = await sget("menu:"+WEEK_KEY);
-  MENU_SEMANAL = (Array.isArray(m) && m.length===7 && m.every(id=>RECETAS[id]))
-    ? m : MENU_POR_DEFECTO.slice();
+  const valido = Array.isArray(m) && m.length===7 && m.every(id=>RECETAS[id]);
+  MENU_SEMANAL = valido ? m : MENU_POR_DEFECTO.slice();
+  /* Si la semana todavía no existe en la base, se publica ahora. Antes el
+     menú por defecto vivía sólo en memoria: la cocina lo mostraba, pero
+     ningún otro dispositivo podía verlo porque nunca se escribía. */
+  if(!valido) await sset("menu:"+WEEK_KEY, MENU_SEMANAL);
 }
 
 async function guardarMenu(){
