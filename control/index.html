@@ -74,6 +74,19 @@ main{padding:14px 14px 96px}
 #lv-ok{padding:13px 30px;border:0;border-radius:10px;background:var(--tinta);color:var(--crema);
   font:700 .93rem system-ui}
 .lv-caja small{display:block;margin-top:18px;font-size:.76rem;color:var(--gris);line-height:1.5}
+
+.pauta{margin-top:16px;background:#fff;border:1px solid var(--linea);border-radius:12px;padding:13px}
+.pt{font:800 .68rem system-ui;letter-spacing:.09em;color:var(--gris)}
+.pcs{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px}
+.pc{font-size:.7rem;font-weight:600;border-radius:8px;padding:4px 8px;background:#f2efe8;color:#5c5850}
+.pc b{font-weight:800}
+.pc.ok{background:#e6f2ea;color:#2f6347}
+.pc.mal{background:#fbe6e0;color:#8c3a2a}
+.pc.warn{background:#fdf0dc;color:#8a6014}
+.pv{margin:11px 0 0;padding-left:17px;font-size:.79rem;line-height:1.55}
+.pv li.e{color:#8c3a2a;font-weight:600}
+.pv li.a{color:var(--gris)}
+.pok{margin-top:10px;font-size:.8rem;font-weight:700;color:#2f6347}
 </style>
 </head>
 <body>
@@ -491,6 +504,170 @@ main{padding:14px 14px 96px}
 })(typeof globalThis !== "undefined" ? globalThis : this);
 </script>
 <script>/* ============================================================================
+   pauta.js · Motor de reglas dietarias
+   ----------------------------------------------------------------------------
+   Hoy la app tiene pautaOk(), que devuelve true o false. Eso sirve para pintar
+   un semáforo y para nada más: si dice que no, hay que adivinar por qué.
+
+   Esto responde otra pregunta: QUÉ se rompió, CUÁNTO falta y QUÉ pasaría si
+   cambias este día por este otro. Es determinista — cuenta y compara, no
+   interpreta — así que corre entero dentro del teléfono, sin servidor.
+
+   Separación deliberada: acá viven las REGLAS. Los datos del menú viven en la
+   base. Mezclarlos fue lo que nos tuvo cambiando literales por todo el HTML.
+   ========================================================================== */
+(function (root) {
+  "use strict";
+
+  /* Frecuencias de la pauta (nutricionista, 25-jun-2026).
+     Suman 10 en 7 días porque un plato cuenta en más de una categoría:
+     lentejas con arroz es legumbre Y cereal.                                */
+  var CATS = {
+    legumbre: { label: "Legumbres",         porSemana: 3 },
+    cereal:   { label: "Arroz / pasta",     porSemana: 2 },
+    guiso:    { label: "Guiso tradicional", porSemana: 1 },
+    pescado:  { label: "Pescado",           porSemana: 2 },
+    ave:      { label: "Pollo / pavo",      porSemana: 2 }
+  };
+
+  /* Régimen hiposódico. No es una preferencia: es indicación médica para uno
+     de los niños. Se busca en el texto de ingredientes y del nombre.        */
+  var PROHIBIDO = [
+    { re: /\bcubit|caldo\s+(en\s+)?(cubo|polvo)|knorr|maggi/i,
+      que: "cubo o caldo concentrado", por: "sodio" },
+    { re: /\bmargarina/i,             que: "margarina",           por: "indicación" },
+    { re: /\b(cecina|vienesa|salchich|jam[oó]n|mortadela|paté|chorizo|tocino|longaniza)/i,
+      que: "embutido o cecina",       por: "sodio" },
+    { re: /\bsal\b/i,                que: "sal añadida",         por: "sodio" },
+    { re: /\bsalsa\s+de\s+soya|s(o|ó)ya\s+salsa|ketchup|mayonesa\s+industrial/i,
+      que: "salsa industrial",        por: "sodio" },
+    { re: /\bqueso\s+(parmesano|azul|rallado\s+industrial)/i,
+      que: "queso muy salado",        por: "sodio" }
+  ];
+
+  var DIAS = ["lunes","martes","miércoles","jueves","viernes","sábado","domingo"];
+
+  function catsDe(r) {
+    if (!r) return [];
+    return r.cats || (r.cat ? [r.cat] : []);
+  }
+
+  function contar(menu, recetas) {
+    var c = {};
+    Object.keys(CATS).forEach(function (k) { c[k] = 0; });
+    (menu || []).forEach(function (id) {
+      catsDe(recetas[id]).forEach(function (k) { if (c[k] !== undefined) c[k]++; });
+    });
+    return c;
+  }
+
+  /* -------------------------------------------------------------- validar */
+  function validar(menu, recetas, opts) {
+    opts = opts || {};
+    var errores = [], avisos = [], conteo = contar(menu, recetas);
+
+    // 1. Días sin definir
+    var vacios = [];
+    (menu || []).forEach(function (id, i) {
+      if (!id || !recetas[id]) vacios.push(DIAS[i]);
+    });
+    if (vacios.length)
+      avisos.push({ tipo: "vacio",
+        texto: vacios.length === 7 ? "La semana está vacía"
+             : "Sin definir: " + vacios.join(", ") });
+
+    // 2. Frecuencias de la pauta
+    Object.keys(CATS).forEach(function (k) {
+      var meta = CATS[k].porSemana, hay = conteo[k], d = hay - meta;
+      if (d === 0) return;
+      var t = CATS[k].label + ": " + hay + " de " + meta;
+      (d < 0 ? errores : avisos).push({
+        tipo: d < 0 ? "falta" : "sobra", cat: k, delta: d,
+        texto: d < 0 ? t + " — faltan " + (-d) : t + " — " + d + " de más"
+      });
+    });
+
+    // 3. Repetición: el mismo plato dos días muy seguidos cansa y desperdicia
+    //    la lógica de tandas, que ya reparte los excedentes.
+    var minDias = opts.repetirTrasDias || 2;
+    for (var i = 0; i < (menu || []).length; i++) {
+      for (var j = i + 1; j < menu.length && j - i <= minDias; j++) {
+        if (menu[i] && menu[i] === menu[j])
+          avisos.push({ tipo: "repite", texto:
+            (recetas[menu[i]] ? recetas[menu[i]].name : menu[i])
+            + " se repite " + DIAS[i] + " y " + DIAS[j] });
+      }
+    }
+
+    // 4. Régimen hiposódico
+    (menu || []).forEach(function (id, i) {
+      var r = recetas[id];
+      if (!r) return;
+      /* «Cazuela de pollo (sin sal)» no lleva sal: la lleva escrita. Las
+         negaciones se limpian ANTES de buscar, o el motor reta a quien está
+         cumpliendo, que es la peor forma de perder confianza en una alerta. */
+      var texto = [r.name, r.nota, (r.ingredientes || []).join(" ")]
+        .filter(Boolean).join(" ")
+        .replace(/\b(sin|libre de|cero|bajo en|reducido en|no)\s+(sal|sodio|agregar sal|azúcar)\b/gi, " ")
+        .replace(/\bhiposódic\w*|\bsin agregar\b/gi, " ");
+      PROHIBIDO.forEach(function (p) {
+        if (p.re.test(texto))
+          errores.push({ tipo: "sodio", dia: i, texto:
+            DIAS[i] + " · " + r.name + ": " + p.que + " (" + p.por + ")" });
+      });
+    });
+
+    return {
+      ok: errores.length === 0,
+      errores: errores, avisos: avisos, conteo: conteo,
+      resumen: Object.keys(CATS).map(function (k) {
+        return CATS[k].label + " " + conteo[k] + "/" + CATS[k].porSemana;
+      }).join(" · ")
+    };
+  }
+
+  /* ------------------------------------------------------------- impacto --
+     Qué pasaría si el día `idx` pasara a ser `nuevoId`. Es lo que permite
+     avisar ANTES de guardar, en vez de retar después.                       */
+  function impacto(menu, idx, nuevoId, recetas, opts) {
+    var antes = validar(menu, recetas, opts);
+    var copia = (menu || []).slice();
+    copia[idx] = nuevoId;
+    var despues = validar(copia, recetas, opts);
+
+    var clave = function (v) { return v.tipo + "|" + (v.cat || "") + "|" + v.texto; };
+    var previos = {};
+    antes.errores.concat(antes.avisos).forEach(function (v) { previos[clave(v)] = 1; });
+
+    var nuevos = despues.errores.concat(despues.avisos)
+      .filter(function (v) { return !previos[clave(v)]; });
+
+    return {
+      antes: antes, despues: despues, nuevos: nuevos,
+      rompe: despues.errores.length > antes.errores.length,
+      arregla: despues.errores.length < antes.errores.length
+    };
+  }
+
+  /* Qué categorías faltan — para proponer reemplazos que arreglen en vez de
+     ofrecer cualquier receta.                                               */
+  function sugerencias(menu, recetas, opts) {
+    var v = validar(menu, recetas, opts);
+    var faltan = v.errores.filter(function (e) { return e.tipo === "falta"; })
+                          .map(function (e) { return e.cat; });
+    if (!faltan.length) return [];
+    return Object.keys(recetas).filter(function (id) {
+      return catsDe(recetas[id]).some(function (c) { return faltan.indexOf(c) >= 0; });
+    });
+  }
+
+  var API = { CATS: CATS, DIAS: DIAS, validar: validar, impacto: impacto,
+              sugerencias: sugerencias, contar: contar, PROHIBIDO: PROHIBIDO };
+  root.Pauta = API;
+  if (typeof module !== "undefined" && module.exports) module.exports = API;
+})(typeof globalThis !== "undefined" ? globalThis : this);
+</script>
+<script>/* ============================================================================
    Control de la Casa · lógica
    ----------------------------------------------------------------------------
    Escribe en las MISMAS llaves que la cocina: menu:<semana>, recetario, falta.
@@ -542,6 +719,14 @@ async function cargar(){
 }
 
 async function guardarMenu(){
+  const v = Pauta.validar(estado.menu, estado.recetas);
+  const graves = v.errores.filter(e => e.tipo === "sodio");
+  /* El sodio no es una preferencia: es indicación médica para uno de los
+     niños. Las frecuencias se pueden desviar una semana; esto no en silencio. */
+  if(graves.length && !confirm("Este menú tiene " + graves.length
+      + " plato(s) que rompen el régimen sin sal:\n\n"
+      + graves.map(e => "· " + e.texto).join("\n")
+      + "\n\n¿Guardar igual?")) return;
   await S.set("menu:" + estado.semana, estado.menu);
   estado.sucio = false;
   aviso("Menú guardado · la tablet ya lo tiene");
@@ -571,6 +756,14 @@ function pintar(){
 
 function vistaSemana(){
   const hoy = (new Date().getDay() + 6) % 7;
+  /* Si la base todavía no tiene recetas, una lista de selectores vacíos no
+     dice nada. Mejor decir qué falta y qué hacer. */
+  if(!Object.keys(estado.recetas).length)
+    return '<div class="vacio">La base todavía no tiene recetas.<br><br>'
+         + 'Abre <b>Cocina</b> una vez en cualquier dispositivo: al arrancar '
+         + 'publica el recetario y el menú de la semana, y esto se llena solo.'
+         + '<br><br><small style="color:#8a8578">buscando: recetas:base · menu:'
+         + esc(estado.semana) + '</small></div>';
   return '<div class="lista">' + estado.menu.map((id,i) => {
     const r = estado.recetas[id];
     return '<div class="fila' + (i===hoy ? " hoy" : "") + '">'
@@ -584,8 +777,29 @@ function vistaSemana(){
       + (r && r.tanda ? '<span class="porc">' + r.tanda + ' porc.</span>' : "")
       + '</div>';
   }).join("") + '</div>'
+  + panelPauta()
   + '<p class="nota">Cambia lo que quieras y guarda al final. La tablet se '
   + 'actualiza sola, sin que nadie toque nada allá.</p>';
+}
+
+/* La pauta se revisa en vivo, mientras se edita, no al guardar. Avisar
+   después de que alguien decidió es retarlo; avisar mientras decide es
+   ayudarlo. */
+function panelPauta(){
+  const v = Pauta.validar(estado.menu, estado.recetas);
+  const chip = k => {
+    const hay = v.conteo[k], meta = Pauta.CATS[k].porSemana;
+    const cl = hay === meta ? "ok" : (hay < meta ? "mal" : "warn");
+    return '<span class="pc ' + cl + '">' + esc(Pauta.CATS[k].label)
+         + ' <b>' + hay + '/' + meta + '</b></span>';
+  };
+  let h = '<div class="pauta"><div class="pt">PAUTA DE LA SEMANA</div>'
+        + '<div class="pcs">' + Object.keys(Pauta.CATS).map(chip).join("") + '</div>';
+  const todos = v.errores.concat(v.avisos).filter(x => x.tipo !== "vacio");
+  if(todos.length) h += '<ul class="pv">' + todos.map(x =>
+      '<li class="' + (v.errores.indexOf(x) >= 0 ? "e" : "a") + '">' + esc(x.texto) + '</li>').join("") + '</ul>';
+  else if(!v.avisos.length) h += '<div class="pok">Cuadra con la pauta</div>';
+  return h + '</div>';
 }
 
 function vistaFalta(){
@@ -628,9 +842,13 @@ function aviso(t){
 document.addEventListener("change", e => {
   const s = e.target.closest("select[data-idx]");
   if(!s) return;
-  estado.menu[Number(s.dataset.idx)] = s.value || null;
+  const i = Number(s.dataset.idx);
+  const im = Pauta.impacto(estado.menu, i, s.value || null, estado.recetas);
+  estado.menu[i] = s.value || null;
   estado.sucio = true;
   pintar();
+  if(im.nuevos.length) aviso((im.rompe ? "⚠ " : "") + im.nuevos[0].texto);
+  else if(im.arregla) aviso("Con eso queda dentro de la pauta ✓");
 });
 
 document.addEventListener("click", async e => {
