@@ -118,7 +118,7 @@ main{padding:14px 14px 96px}
   <button id="atras" style="display:none">← Volver</button>
   <div class="h1">CONTROL DE LA CASA</div>
   <span id="estado" class="mal">○ conectando…</span>
-  <span class="build">v2.0 · 04 ago</span>
+  <span class="build">v2.2 · 04 ago</span>
 </header>
 <main id="app"><div class="vacio">Cargando…</div></main>
 <div id="barra-guardar"><button id="guardar">Guardar el menú de la semana</button></div>
@@ -144,7 +144,7 @@ main{padding:14px 14px 96px}
    ========================================================================== */
 (function (root) {
   "use strict";
-console.log("Control de la Casa · v2.0 · 04 ago");
+console.log("Control de la Casa · v2.2 · 04 ago");
 
   /* ---- Reglas de clave del storage subyacente -----------------------------
      Sin espacios, sin / \ ' " y bajo 200 caracteres. Normalizamos en vez de
@@ -549,7 +549,11 @@ console.log("Control de la Casa · v2.0 · 04 ago");
     cereal:   { label: "Arroz / pasta",     porSemana: 2 },
     guiso:    { label: "Guiso tradicional", porSemana: 1 },
     pescado:  { label: "Pescado",           porSemana: 2 },
-    ave:      { label: "Pollo / pavo",      porSemana: 2 }
+    ave:      { label: "Pollo / pavo",      porSemana: 2 },
+    /* Carne roja: Julián puede comer, poco. Es un TOPE (máximo semanal),
+       no una obligación: cero está perfecto, dos ya es aviso. El número es
+       ajustable si la pauta de la nutricionista dice otra cosa. */
+    carne:    { label: "Carne roja",         maxSemana: 1 }
   };
 
   /* Régimen hiposódico. No es una preferencia: es indicación médica para uno
@@ -598,9 +602,17 @@ console.log("Control de la Casa · v2.0 · 04 ago");
         texto: vacios.length === 7 ? "La semana está vacía"
              : "Sin definir: " + vacios.join(", ") });
 
-    // 2. Frecuencias de la pauta
+    // 2. Frecuencias de la pauta. Dos semánticas:
+    //    porSemana = cantidad exacta (obligación) · maxSemana = tope (opcional)
     Object.keys(CATS).forEach(function (k) {
-      var meta = CATS[k].porSemana, hay = conteo[k], d = hay - meta;
+      var hay = conteo[k];
+      if (CATS[k].maxSemana != null) {
+        if (hay > CATS[k].maxSemana)
+          avisos.push({ tipo: "tope", cat: k, delta: hay - CATS[k].maxSemana,
+            texto: CATS[k].label + ": " + hay + " — el tope es " + CATS[k].maxSemana + " por semana" });
+        return;
+      }
+      var meta = CATS[k].porSemana, d = hay - meta;
       if (d === 0) return;
       var t = CATS[k].label + ": " + hay + " de " + meta;
       (d < 0 ? errores : avisos).push({
@@ -630,7 +642,7 @@ console.log("Control de la Casa · v2.0 · 04 ago");
          cumpliendo, que es la peor forma de perder confianza en una alerta. */
       var texto = [r.name, r.nota, (r.ingredientes || []).join(" ")]
         .filter(Boolean).join(" ")
-        .replace(/\b(sin|libre de|cero|bajo en|reducido en|no)\s+(sal|sodio|agregar sal|azúcar)\b/gi, " ")
+        .replace(/\b(sin|libre de|cero|bajo en|reducido en|no|nunca|jamás)\s+(sal|sodio|agregar sal|azúcar|cubitos?|caldos?( concentrados?)?)\b/gi, " ")
         .replace(/\bhiposódic\w*|\bsin agregar\b/gi, " ");
       PROHIBIDO.forEach(function (p) {
         if (p.re.test(texto))
@@ -643,7 +655,8 @@ console.log("Control de la Casa · v2.0 · 04 ago");
       ok: errores.length === 0,
       errores: errores, avisos: avisos, conteo: conteo,
       resumen: Object.keys(CATS).map(function (k) {
-        return CATS[k].label + " " + conteo[k] + "/" + CATS[k].porSemana;
+        var m = CATS[k].maxSemana != null ? "≤" + CATS[k].maxSemana : String(CATS[k].porSemana);
+        return CATS[k].label + " " + conteo[k] + "/" + m;
       }).join(" · ")
     };
   }
@@ -827,6 +840,122 @@ function resolverProducto(texto){
 }
 /* Producto asociado a un ítem de "falta algo" */
 </script>
+<script>/* seed.js — EXTRAÍDO de cocina/index.html en el ensamblado. Fuente única. */
+const RECETAS_BASE = {
+  lentejas:{name:"Lentejas con arroz y ensalada", diff:1, time:"45 min", tags:["Legumbre 1/3"],
+    cat:"legumbre", fuente:"Receta de la casa · pauta 25-jun-2026",
+    ings:[["Lentejas","500 g"],["Arroz","1 taza"],["Zanahoria","3 un"],["Cebolla","1 un"],["Zapallo","300 g"],["Ajo","2 dientes"],["Lechuga + tomate","p/ ensalada"],["Aceite de oliva","3 cdas"]],
+    steps:["Remojar las lentejas desde la noche anterior.","Sofreír cebolla, ajo y zanahoria rallada en aceite de oliva, SIN SAL.","Agregar lentejas, zapallo en cubos y agua. Cocinar 30-35 min. Sazonar con comino y orégano.","Servir 1 taza sobre ¾ taza de arroz graneado, con ensalada de colores al lado."],
+    julian:"1 taza de lentejas con verduras + ensalada + 1 cdta aceite oliva + 1 fruta. Sin sal en toda la olla — el sabor va en comino, orégano y ajo."},
+  pasta_pollo:{name:"Pasta con salsa de verduras y pollo", diff:1, time:"35 min", tags:["Arroz/pasta 1/2","Pollo 1/2"],
+    cat:"cereal", cats:["cereal","ave"], fuente:"Receta de la casa · pauta 25-jun-2026",
+    ings:[["Fideos (integral ideal)","400 g"],["Pechuga de pollo","400 g"],["Tomate","4 un"],["Zanahoria","2 un"],["Zapallo italiano","1 un"],["Albahaca fresca","1 atado"],["Ajo","2 dientes"],["Aceite de oliva","3 cdas"]],
+    steps:["Cocer los fideos sin sal en el agua.","Salsa: sofreír ajo, tomate rallado, zanahoria y zapallito; albahaca al final.","Dorar el pollo en tiritas con pimienta y orégano, mezclar con la salsa.","Servir ¾ taza de pasta con salsa para Julián."],
+    julian:"¾ taza de pasta cocida + 35 g de pollo + ensalada de colores + 1 fruta. Salsa casera sin sal ni caldos."},
+  porotos:{name:"Porotos con verduras", diff:2, time:"60 min", tags:["Legumbre 2/3"],
+    cat:"legumbre", fuente:"Receta de la casa · pauta 25-jun-2026",
+    ings:[["Porotos","500 g"],["Zapallo","400 g"],["Cebolla","1 un"],["Pimentón","1 un"],["Acelga o espinaca","1 atado"],["Ajo","2 dientes"],["Comino y orégano","a gusto"],["Aceite de oliva","3 cdas"]],
+    steps:["Remojar los porotos desde la noche anterior.","Cocerlos en agua nueva hasta que ablanden (45 min aprox).","Sofrito de cebolla, ajo y pimentón SIN SAL; agregar a la olla con el zapallo.","Al final sumar la acelga picada. Sazonar con comino."],
+    julian:"1 taza de porotos con verduras + ensalada + 1 fruta. Todo sin sal."},
+  merluza:{name:"Merluza al horno con puré", diff:2, time:"40 min", tags:["Pescado 1/2"],
+    cat:"pescado", fuente:"Receta de la casa · pauta 25-jun-2026",
+    ings:[["Filete de merluza","4 un"],["Papas","1 kg"],["Leche semidescremada","½ taza"],["Limón","2 un"],["Orégano y pimienta","a gusto"],["Aceite de oliva","2 cdas"],["Verduras p/ ensalada","variadas"]],
+    steps:["Marinar el pescado con limón, ajo y orégano (nada de sal).","Hornear 20 min a 180°C.","Puré: papas + leche semidescremada + 1 cdta aceite de oliva, sin margarina (prohibida en la pauta).","Revisar espinas antes de servir a los niños."],
+    julian:"35 g de pescado + guiso de papa (1 taza) + ensalada + 1 fruta. El puré va con leche semidescremada, nunca margarina."},
+  garbanzos:{name:"Garbanzos guisados con zapallo", diff:1, time:"50 min", tags:["Legumbre 3/3"],
+    cat:"legumbre", fuente:"Receta de la casa · pauta 25-jun-2026",
+    ings:[["Garbanzos","500 g"],["Zapallo camote","400 g"],["Zanahoria","2 un"],["Cebolla","1 un"],["Cúrcuma y curry suave","1 cdta"],["Ajo","2 dientes"],["Aceite de oliva","3 cdas"]],
+    steps:["Remojar los garbanzos desde la noche anterior.","Cocer hasta ablandar (45 min) en agua sin sal.","Sofrito de cebolla, ajo y zanahoria; sumar cúrcuma y curry suave.","Agregar zapallo en cubos y cocinar 15 min más."],
+    julian:"1 taza de garbanzos + ensalada de colores + 1 fruta. La cúrcuma y el curry están en su lista de aliños permitidos."},
+  cazuela:{name:"Cazuela de pollo (sin sal)", diff:2, time:"55 min", tags:["Guiso 1/1","Pollo 2/2"],
+    cat:"guiso", cats:["guiso","ave"], fuente:"Receta de la casa · pauta 25-jun-2026",
+    ings:[["Trutro de pollo sin piel","4 un"],["Papas","4 un"],["Zapallo","400 g"],["Choclo","2 trozos"],["Arroz","½ taza"],["Porotos verdes","1 taza"],["Cilantro","1 atado"],["Ajo y comino","a gusto"]],
+    steps:["Cocer el pollo SIN PIEL en agua con ajo y comino — sin sal, sin caldos concentrados.","A los 20 min agregar papas, zapallo y choclo.","Sumar arroz y porotos verdes al final (10 min).","Servir con cilantro fresco picado."],
+    julian:"1 taza de cazuela (su guiso tradicional de la semana) + 1 fruta. El caldo toma sabor del ajo, comino y cilantro."},
+  pescado_arroz:{name:"Pescado a la plancha con arroz", diff:1, time:"30 min", tags:["Pescado 2/2","Arroz/pasta 2/2"],
+    cat:"pescado", cats:["pescado","cereal"], fuente:"Receta de la casa · pauta 25-jun-2026",
+    ings:[["Filete de reineta o salmón","4 un"],["Arroz","1½ taza"],["Limón","2 un"],["Jengibre rallado","1 cdta"],["Brócoli","1 un"],["Tomate + lechuga","p/ ensalada"],["Aceite de oliva","3 cdas"]],
+    steps:["Marinar el pescado con limón, jengibre y pimienta.","Plancha o sartén 4 min por lado con poquito aceite de oliva.","Arroz graneado sin sal; brócoli al vapor.","Ensalada de colores para acompañar."],
+    julian:"35 g de pescado + ¾ taza de arroz + brócoli y ensalada + 1 fruta. Revisar espinas."},
+};
+const MENU_POR_DEFECTO = ["lentejas","pasta_pollo","porotos","merluza","garbanzos","cazuela","pescado_arroz"];
+</script>
+<script>/* ============================================================================
+   recetas-extra.js · Recetario ampliado — Claude, ago 2026
+   ----------------------------------------------------------------------------
+   18 recetas nuevas para nutrir el repertorio. Criterios:
+   · TODAS hiposódicas: nada de caldos concentrados, embutidos ni salazones.
+     El sabor sale de sofritos, hierbas, limón, ajo, comino, pimentón dulce.
+   · Ataca el hueco real de legumbres (9 apariciones en 30 pedidos, contra
+     3/semana de pauta): cinco platos de legumbre nuevos para variar.
+   · Pescado más allá de trucha/salmón (lo único que la casa compra hoy):
+     merluza, reineta y jurel, que además son más baratos.
+   · Carnes rojas: nueva categoría. Julián puede, poco — tope, no obligación.
+   · diff: 1 fácil · 2 media · 3 elaborada. tiempo en minutos reales.
+   Los ids son nuevos: NUNCA pisan una receta existente.
+   ========================================================================== */
+const RECETAS_EXTRA = {
+  /* ---- carnes rojas (nueva categoría, tope semanal) ---- */
+  carne_zanahoria:{name:"Carne guisada con zanahoria y arroz", cat:"carne", cats:["carne","cereal"],
+    diff:2, time:"60 min", fuente:"Recetario Claude · ago 2026",
+    nota:"Posta o asiento en cubos, sofrito de cebolla-ajo-zanahoria, pimentón dulce."},
+  pastel_papa:{name:"Pastel de papa casero", cat:"carne", cats:["carne","guiso"],
+    diff:2, time:"75 min", fuente:"Recetario Claude · ago 2026",
+    nota:"Carne molida con cebolla y comino; puré con leche y mantequilla sin sodio."},
+  bistec_pure:{name:"Bistec a la plancha con puré y ensalada", cat:"carne", cats:["carne"],
+    diff:1, time:"35 min", fuente:"Recetario Claude · ago 2026",
+    nota:"Sellado con ajo y orégano; limón al servir."},
+
+  /* ---- legumbres (el hueco de la casa) ---- */
+  garbanzos_espinaca:{name:"Garbanzos con espinaca y huevo duro", cat:"legumbre", cats:["legumbre"],
+    diff:1, time:"40 min", fuente:"Recetario Claude · ago 2026"},
+  porotos_riendas:{name:"Porotos con riendas (tallarines)", cat:"legumbre", cats:["legumbre","cereal"],
+    diff:2, time:"70 min", fuente:"Recetario Claude · ago 2026",
+    nota:"Zapallo camote y albahaca; los tallarines van en la misma olla."},
+  lentejas_zapallo:{name:"Lentejas con zapallo y arroz integral", cat:"legumbre", cats:["legumbre","cereal"],
+    diff:1, time:"50 min", fuente:"Recetario Claude · ago 2026"},
+  croquetas_lenteja:{name:"Croquetas de lenteja al horno con ensalada", cat:"legumbre", cats:["legumbre"],
+    diff:2, time:"55 min", fuente:"Recetario Claude · ago 2026",
+    nota:"Ligadas con huevo y avena; al horno, no fritas."},
+  ensalada_garbanzo:{name:"Ensalada tibia de garbanzos con atún", cat:"legumbre", cats:["legumbre","pescado"],
+    diff:1, time:"25 min", fuente:"Recetario Claude · ago 2026",
+    nota:"Atún al agua bajo en sodio, tomate, cebolla morada, limón."},
+
+  /* ---- pescados (variedad y precio) ---- */
+  reineta_horno:{name:"Reineta al horno con papas doradas", cat:"pescado", cats:["pescado"],
+    diff:1, time:"45 min", fuente:"Recetario Claude · ago 2026",
+    nota:"Limón, eneldo y aceite de oliva."},
+  jurel_tomate:{name:"Jurel guisado con tomate y arroz", cat:"pescado", cats:["pescado","cereal"],
+    diff:1, time:"35 min", fuente:"Recetario Claude · ago 2026",
+    nota:"Jurel al agua, sofrito de tomate natural, orégano."},
+  merluza_verduras:{name:"Merluza al vapor con verduras salteadas", cat:"pescado", cats:["pescado"],
+    diff:2, time:"40 min", fuente:"Recetario Claude · ago 2026"},
+
+  /* ---- aves ---- */
+  pollo_arvejado:{name:"Pollo arvejado con arroz", cat:"ave", cats:["ave","guiso"],
+    diff:2, time:"55 min", fuente:"Recetario Claude · ago 2026",
+    nota:"Trutro sin piel, arvejas, zanahoria, comino."},
+  pavo_quinoa:{name:"Pavo salteado con quinoa y verduras", cat:"ave", cats:["ave","cereal"],
+    diff:1, time:"35 min", fuente:"Recetario Claude · ago 2026"},
+  pollo_limon:{name:"Pollo al horno con limón y papas", cat:"ave", cats:["ave"],
+    diff:1, time:"60 min", fuente:"Recetario Claude · ago 2026",
+    nota:"Marinado en limón, ajo y romero desde la mañana."},
+
+  /* ---- cereales y guisos ---- */
+  pasta_pesto:{name:"Pasta con pesto casero de albahaca", cat:"cereal", cats:["cereal"],
+    diff:1, time:"30 min", fuente:"Recetario Claude · ago 2026",
+    nota:"Pesto sin queso curado: albahaca, nuez, oliva, ajo."},
+  risotto_zapallo:{name:"Risotto cremoso de zapallo", cat:"cereal", cats:["cereal"],
+    diff:3, time:"50 min", fuente:"Recetario Claude · ago 2026",
+    nota:"Con agua de verduras hecha en casa."},
+  charquican:{name:"Charquicán de verduras con huevo", cat:"guiso", cats:["guiso"],
+    diff:2, time:"50 min", fuente:"Recetario Claude · ago 2026",
+    nota:"Versión sin charqui: zapallo, papa, choclo, huevo frito arriba."},
+  carbonada:{name:"Carbonada de verduras con carne", cat:"guiso", cats:["guiso","carne"],
+    diff:2, time:"65 min", fuente:"Recetario Claude · ago 2026",
+    nota:"Caldo propio de la cocción, verduras de estación."}
+};
+</script>
 <script>/* ============================================================================
    Control de la Casa · v2
    ----------------------------------------------------------------------------
@@ -872,10 +1001,39 @@ const esc = s => String(s==null?"":s).replace(/[&<>"']/g, c =>
 async function cargar(){
   estado.cargando = true; pintar();
   estado.semana  = claveSemana();
-  const base     = (await S.get("recetas:base", null)) || {};
+  let base       = (await S.get("recetas:base", null)) || {};
+  /* Siembra: si la base está vacía y hay conexión, Control la puebla él
+     mismo con las recetas de fábrica (extraídas de cocina en el ensamblado).
+     Antes esto dependía de "abrir Cocina en algún dispositivo" — una cadena
+     de suerte, no un sistema. Ambas apps saben sembrar; gana la primera.    */
+  if(!Object.keys(base).length && MODO === "nube"
+     && typeof RECETAS_BASE !== "undefined"){
+    try{
+      await S.set("recetas:base", RECETAS_BASE);
+      base = RECETAS_BASE;
+      aviso("Recetario de fábrica publicado a la base");
+    }catch(e){}
+  }
+  /* Recetario ampliado: se suman las recetas nuevas que la base aún no
+     tenga. Regla dura: NUNCA pisar un id existente — si B editó una receta,
+     su versión manda para siempre. */
+  if(MODO === "nube" && typeof RECETAS_EXTRA !== "undefined"){
+    const faltantes = Object.keys(RECETAS_EXTRA).filter(id => !base[id]);
+    if(faltantes.length){
+      try{
+        faltantes.forEach(id => base[id] = RECETAS_EXTRA[id]);
+        await S.set("recetas:base", base);
+        aviso(faltantes.length + " recetas nuevas sumadas al recetario");
+      }catch(e){}
+    }
+  }
   const propias  = (await S.get("recetario", null))    || {};
   estado.recetas = Object.assign({}, base, propias);
-  const m = await S.get("menu:" + estado.semana, null);
+  let m = await S.get("menu:" + estado.semana, null);
+  if(!(Array.isArray(m) && m.length === 7) && MODO === "nube"
+     && Object.keys(base).length && typeof MENU_POR_DEFECTO !== "undefined"){
+    try{ m = MENU_POR_DEFECTO.slice(); await S.set("menu:" + estado.semana, m); }catch(e){}
+  }
   estado.menu  = (Array.isArray(m) && m.length === 7) ? m.slice() : new Array(7).fill(null);
   estado.falta = (await S.get("falta", null)) || [];
   estado.sucio = false;
@@ -955,9 +1113,16 @@ function pintar(){
 
 function chipPauta(v){
   return '<div class="pcs">' + Object.keys(Pauta.CATS).map(k => {
-    const hay = v.conteo[k], meta = Pauta.CATS[k].porSemana;
-    const cl = hay === meta ? "ok" : (hay < meta ? "mal" : "warn");
-    return '<span class="pc ' + cl + '">' + esc(Pauta.CATS[k].label)
+    const c = Pauta.CATS[k], hay = v.conteo[k];
+    let cl, meta;
+    if(c.maxSemana != null){          // tope: cero es perfecto, pasarse es warn
+      meta = "≤" + c.maxSemana;
+      cl = hay <= c.maxSemana ? "ok" : "warn";
+    } else {
+      meta = String(c.porSemana);
+      cl = hay === c.porSemana ? "ok" : (hay < c.porSemana ? "mal" : "warn");
+    }
+    return '<span class="pc ' + cl + '">' + esc(c.label)
          + ' <b>' + hay + '/' + meta + '</b></span>';
   }).join("") + '</div>';
 }
@@ -1022,16 +1187,48 @@ function vistaHome(){
   return h;
 }
 
+const DIFF = {1:"fácil", 2:"media", 3:"elaborada"};
+function rotulo(r){
+  const extra = [r.time, DIFF[r.diff]].filter(Boolean).join(" · ");
+  return esc(r.name) + (extra ? "  —  " + extra : "");
+}
+function catsDe(r){ return r ? (r.cats || (r.cat ? [r.cat] : [])) : []; }
+
+/* Al cambiar un plato, primero se ofrecen los de SU MISMA categoría — el
+   cambio típico es "otra legumbre", no "cualquier cosa" — y después el resto,
+   agrupado por categoría, cada uno con su tiempo y dificultad. */
+function opcionesAgrupadas(actualId){
+  const cats = catsDe(estado.recetas[actualId]);
+  const catPrincipal = cats[0] || null;
+  const grupos = {};
+  Object.keys(estado.recetas).forEach(k => {
+    const c = catsDe(estado.recetas[k])[0] || "otros";
+    (grupos[c] = grupos[c] || []).push(k);
+  });
+  const orden = catPrincipal
+    ? [catPrincipal, ...Object.keys(Pauta.CATS).filter(c => c !== catPrincipal), "otros"]
+    : [...Object.keys(Pauta.CATS), "otros"];
+  let h = '<option value=""' + (actualId ? "" : " selected") + '>— sin definir —</option>';
+  orden.forEach(c => {
+    if(!grupos[c] || !grupos[c].length) return;
+    const label = (Pauta.CATS[c] ? Pauta.CATS[c].label : "Otros")
+                + (c === catPrincipal ? " · misma categoría" : "");
+    h += '<optgroup label="' + esc(label) + '">'
+      + grupos[c].sort((a,b) => (estado.recetas[a].diff||9)-(estado.recetas[b].diff||9))
+          .map(k => '<option value="' + esc(k) + '"' + (k===actualId ? " selected":"") + '>'
+                  + rotulo(estado.recetas[k]) + '</option>').join("")
+      + '</optgroup>';
+    delete grupos[c];
+  });
+  return h;
+}
+
 function vistaEditar(){
   const hoy = (new Date().getDay()+6)%7;
   return '<div class="lista">' + estado.menu.map((id,i) =>
     '<div class="fila' + (i===hoy ? " hoy" : "") + '">'
     + '<div class="dia"><b>' + DIAS[i] + '</b><span>' + fechaCorta(i) + '</span></div>'
-    + '<select data-idx="' + i + '" class="sel">'
-    + '<option value=""' + (id ? "" : " selected") + '>— sin definir —</option>'
-    + Object.keys(estado.recetas).map(k =>
-        '<option value="' + esc(k) + '"' + (k===id ? " selected":"") + '>'
-        + esc(estado.recetas[k].name) + '</option>').join("")
+    + '<select data-idx="' + i + '" class="sel">' + opcionesAgrupadas(id)
     + '</select></div>').join("") + '</div>'
   + '<div class="tarjeta" style="margin-top:14px">' + chipPauta(Pauta.validar(estado.menu, estado.recetas)) + '</div>';
 }
