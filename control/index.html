@@ -87,18 +87,39 @@ main{padding:14px 14px 96px}
 .pv li.e{color:#8c3a2a;font-weight:600}
 .pv li.a{color:var(--gris)}
 .pok{margin-top:10px;font-size:.8rem;font-weight:700;color:#2f6347}
+
+.tarjeta{background:#fff;border:1px solid var(--linea);border-radius:14px;padding:14px;margin-bottom:12px}
+.tarjeta.off{opacity:.62}
+.tarjeta.prop{border:2px solid var(--ambar);background:#fffdf6}
+.tt{font:800 .68rem system-ui;letter-spacing:.09em;color:var(--gris);margin-bottom:9px}
+.dias{display:flex;flex-direction:column;gap:5px}
+.dias.toca{cursor:pointer}
+.d{display:flex;gap:10px;align-items:baseline;padding:3px 2px;border-radius:7px}
+.d.hoy{background:#fdf3dd}
+.d span{font:700 .66rem system-ui;letter-spacing:.05em;color:var(--gris);min-width:30px}
+.d b{font-size:.86rem;font-weight:700;line-height:1.3}
+.razon{margin-top:10px;font-size:.82rem;line-height:1.5;color:#5c5850;font-style:italic}
+.botones{display:flex;gap:8px;margin-top:13px}
+.primario{flex:1;padding:13px;border:0;border-radius:11px;background:var(--ambar);color:var(--tinta);font:800 .9rem system-ui}
+.secundario{padding:13px 16px;border:1px solid var(--linea);border-radius:11px;background:#fff;color:var(--gris);font:700 .88rem system-ui}
+.accion{width:100%;padding:16px;border:0;border-radius:14px;background:var(--tinta);color:var(--crema);
+  font:800 .96rem system-ui;margin-bottom:12px}
+.accion[disabled]{opacity:.55}
+.enlace{width:100%;padding:13px;border:0;background:none;color:var(--azul);font:700 .88rem system-ui;text-align:center}
+.flist{display:flex;flex-direction:column;gap:7px;margin-top:11px}
+.fitem{display:flex;align-items:center;gap:9px;background:var(--crema);border-radius:10px;padding:9px 11px}
+.mini{font-size:.76rem;color:var(--gris);line-height:1.5;margin-top:9px}
+#atras{border:0;background:none;color:var(--crema);font:700 .85rem system-ui;padding:4px 0;margin-bottom:2px}
+.build{font-size:.62rem;color:#6a6f77;letter-spacing:.06em;margin-left:8px}
 </style>
 </head>
 <body>
 <header>
+  <button id="atras" style="display:none">← Volver</button>
   <div class="h1">CONTROL DE LA CASA</div>
   <span id="estado" class="mal">○ conectando…</span>
+  <span class="build">v2.0 · 04 ago</span>
 </header>
-<nav>
-  <button class="tab on" data-vista="semana">Semana</button>
-  <button class="tab" data-vista="falta">Falta<span id="badge-falta" style="display:none"></span></button>
-  <button class="tab" data-vista="recetas">Recetas</button>
-</nav>
 <main id="app"><div class="vacio">Cargando…</div></main>
 <div id="barra-guardar"><button id="guardar">Guardar el menú de la semana</button></div>
 <div id="toast"></div>
@@ -123,6 +144,7 @@ main{padding:14px 14px 96px}
    ========================================================================== */
 (function (root) {
   "use strict";
+console.log("Control de la Casa · v2.0 · 04 ago");
 
   /* ---- Reglas de clave del storage subyacente -----------------------------
      Sin espacios, sin / \ ' " y bajo 200 caracteres. Normalizamos en vez de
@@ -667,74 +689,254 @@ main{padding:14px 14px 96px}
   if (typeof module !== "undefined" && module.exports) module.exports = API;
 })(typeof globalThis !== "undefined" ? globalThis : this);
 </script>
+<script>/* resolver.js — EXTRAÍDO de cocina/index.html en el ensamblado.
+   Cocina es la dueña del catálogo; Control lo recibe idéntico.
+   No editar acá: se regenera desde cocina en cada build. */
+const CATALOGO = [
+  {id:"pepino",n:"Pepino Ensalada 1 un.",c:"Verduras",p:750,pF:"2026-07-03",pMin:750,pMax:790,f:20,a:["pepino","pepinos","pepino ensalada"]},
+  {id:"zanahoria",n:"Zanahoria Bolsa 1 kg",c:"Verduras",p:1350,pF:"2026-07-03",f:19,a:["zanahoria","zanahorias"]},
+  {id:"champinon",n:"Champiñón Bandeja 200 g",c:"Verduras",p:990,pF:"2026-07-09",pMin:990,pMax:1690,vol:1,f:19,a:["champiñon","champiñones","champinon","hongos","champinones","champinons"]},
+  {id:"mantCon",n:"Mantequilla Soprole con Sal 250 g",c:"Lácteos",p:2568,pF:"2026-07-09",pMin:2408,pMax:3270,vol:1,f:19,a:["mantequilla con sal","mantequilla","mantequillas","mantequilla con"]},
+  {id:"lechugaLB",n:"Lechuga Lollo Bionda Hidropónica 1 un.",c:"Verduras",p:1740,pF:"2026-06-24",pMin:1650,pMax:1740,f:17,q:1,a:["lechuga","lechuga hidroponica","lollo","lechugas"],alt:"lechugaC"},
+  {id:"palta",n:"Palta Hass Extra Chilena (2 un. Aprox)",c:"Frutas",p:6490,pF:"2026-07-09",pMin:4990,pMax:6490,vol:1,f:16,a:["palta","paltas","aguacate"]},
+  {id:"detergente",n:"Detergente Líquido Popeye Bebé Hipoalergénico 3 L",c:"Aseo",p:15170,pF:"2026-07-03",pMin:13390,pMax:15800,f:16,a:["detergente","detergente ropa","popeye","detergentes","detergente liquido"]},
+  {id:"yogVain",n:"Yogurt Colun Origen Vainilla 120 g",c:"Lácteos",p:299,pF:"2026-07-03",pMin:299,pMax:380,vol:1,f:15,a:["yogurt","yoghurt","yogur","yogurt vainilla","yogurtes","yogurts","yogurt origen"]},
+  {id:"yogFrut",n:"Yogurt Colun Origen Frutilla 120 g",c:"Lácteos",p:299,pF:"2026-07-03",pMin:299,pMax:380,vol:1,f:15,a:["yogurt frutilla","yogurt","yogurtes","yogurts","yogurt origen"]},
+  {id:"bjapi",n:"Barras Cereal B-Japi Felicidad 160 g 4 un.",c:"Snacks",p:5290,pF:"2026-06-24",pMin:4290,pMax:5290,f:15,q:2,a:["barras","barritas","b japi","bjapi","barras de cereal","barra","barras cereal"],alt:"cereal-organico-pacari-chocolate-250-g"},
+  {id:"limon",n:"Limón Malla 1 kg",c:"Frutas",p:1000,pF:"2026-07-03",pMin:890,pMax:2090,vol:1,f:13,q:1,a:["limon","limones","limons"],alt:"pack-3-un-nectar-manzana-190-ml"},
+  {id:"trucha",n:"Trucha Filete Congelada 500 g",c:"Pescados",p:6990,pF:"2026-06-24",pMin:6990,pMax:9230,vol:1,f:13,a:["trucha","pescado","truchas","trucha filete"],alt:"salmon"},
+  {id:"agua",n:"Agua Benedictino Sin Gas Bidón 6.5 L",c:"Bebidas",p:2390,pF:"2026-06-24",pMin:2170,pMax:2390,f:12,a:["agua","bidon","agua sin gas","aguas","agua sin"]},
+  {id:"lavaloza",n:"Lavalozas Quix Bio-Activos Concentrado Recarga 1.5 L",c:"Aseo",p:4190,pF:"2026-07-03",pMin:3750,pMax:4190,f:12,a:["lavaloza","lavalozas","quix","lavavajilla"]},
+  {id:"zapitaliano",n:"Zapallo Italiano 1 un.",c:"Verduras",p:790,pF:"2026-06-16",pMin:553,pMax:820,vol:1,f:11,a:["zapallo italiano","zapallito","zucchini","zapallo","zapallos"]},
+  {id:"platano",n:"Plátano Extra Granel (1 a 2 un. Aprox)",c:"Frutas",p:1590,pF:"2026-07-03",f:11,a:["platano","platanos","banana","platano extra"]},
+  {id:"lecheSL",n:"Leche Colun Entera Sin Lactosa 1 L",c:"Lácteos",p:1460,pF:"2026-06-24",pMin:1350,pMax:1490,f:11,a:["leche sin lactosa","leche deslactosada","leche","leches"]},
+  {id:"cebolla",n:"Cebolla Malla 1 kg",c:"Verduras",p:1790,pF:"2026-07-03",f:10,a:["cebolla","cebollas"]},
+  {id:"rucula",n:"Rúcula Baby Pro Verde 150 g",c:"Verduras",p:1990,pF:"2026-06-24",f:9,q:1,a:["rucula","ruculas","rucula baby"],alt:"tomateL"},
+  {id:"pimientoA",n:"Pimiento Amarillo 1 un.",c:"Verduras",p:1790,pF:"2026-07-03",f:9,a:["pimiento","pimenton","morron","pimientos","pimiento amarillo"]},
+  {id:"papa",n:"Papa Malla 2 kg",c:"Verduras",p:2590,pF:"2026-07-03",pMin:2290,pMax:2690,f:9,a:["papa","papas","patata"]},
+  {id:"lechugaC",n:"Lechuga Costina 1 un.",c:"Verduras",p:1420,pF:"2026-07-09",pMin:890,pMax:1420,vol:1,f:9,a:["lechuga costina","lechuga","lechugas"]},
+  {id:"salmon",n:"Salmón Filete Aqua 500 g",c:"Pescados",p:8290,pF:"2026-07-09",pMin:7990,pMax:11990,vol:1,f:9,a:["salmon","salmones","salmons","salmon filete"],alt:"trucha"},
+  {id:"arroz",n:"Arroz Grado 1 Tucapel Gran Selección Grano Largo y Ancho 1 kg",c:"Abarrotes",p:2440,pF:"2026-07-09",pMin:1790,pMax:2450,vol:1,f:9,a:["arroz","arroces","arroz grado"]},
+  {id:"mizosFam",n:"Galletas de Arroz Mizos Chocolate Familiar 120 g",c:"Snacks",p:3550,pF:"2026-06-16",pMin:3540,pMax:3590,f:9,a:["mizos","galletas de arroz","galletas arroz","galletas","galleta"]},
+  {id:"tomateR",n:"Tomate Romanita 340 g",c:"Verduras",p:3490,pF:"2026-07-03",f:8,a:["tomate cherry","romanita","tomatitos","tomate","tomates"],alt:"tomateL"},
+  {id:"tomateL",n:"Tomate Larga Vida Granel (1 a 2 un. Aprox)",c:"Verduras",p:1990,pF:"2026-07-03",f:8,a:["tomate","tomates"]},
+  {id:"leche",n:"Leche Colun Entera 1 L",c:"Lácteos",p:1350,pF:"2026-03-28",pMin:1125,pMax:1350,f:8,a:["leche","leches"],alt:"lecheSL"},
+  {id:"huevos",n:"Huevos La Granja Medianos Gallina Libre 18 un.",c:"Huevos",p:4536,pF:"2026-07-03",pMin:4536,pMax:5640,f:8,a:["huevo","huevos","huevos medianos"]},
+  {id:"pascualina",n:"Tapas Pascualinas Cuisine & Co 400 g",c:"Otros",p:2632,pF:"2026-07-03",pMin:2632,pMax:3390,vol:1,f:8,a:["pascualina","masa","tapas","tapa","tapas pascualinas"]},
+  {id:"manzana",n:"Manzana Fuji Importada Granel (2 a 3 un. Aprox)",c:"Frutas",p:2590,pF:"2026-07-03",pMin:1814,pMax:2590,vol:1,f:7,a:["manzana","manzanas","manzana importada"]},
+  {id:"kiwi",n:"Kiwi Exportación Granel",c:"Frutas",p:4290,pF:"2026-07-03",pMin:4290,pMax:4390,f:7,a:["kiwi","kiwis"]},
+  {id:"quesoMant",n:"Queso Mantecoso Las Parcelas de Valdivia Envasado Laminado 470 g",c:"Lácteos",p:5782,pF:"2026-07-09",pMin:5460,pMax:8400,vol:1,f:7,q:1,a:["queso","queso mantecoso","queso laminado","quesos"],alt:"queso-mantecoso-las-parcelas-de-valdivia"},
+  {id:"molida",n:"Carne Molida Vacuno 4% Grasa Congelada 500 g",c:"Carnes",p:7090,pF:"2026-05-20",pMin:5318,pMax:7090,vol:1,f:7,a:["carne molida","molida","carne","carnes"]},
+  {id:"panMolde",n:"Pan Molde Vollkorn Blanco Sin Orillas 405 g",c:"Panadería",p:3750,pF:"2026-04-27",f:7,a:["pan","pan de molde","molde","panes","pans","pan molde"]},
+  {id:"arandano",n:"Arándano Prize Pote 125 g",c:"Frutas",p:2690,pF:"2026-01-12",pMin:1990,pMax:2690,vol:1,f:6,a:["arandano","arandanos","berries"]},
+  {id:"chocolate-organico-pacari-cerezas-50-g",n:"Chocolate Orgánico Pacari Cerezas 50 g",c:"Frutas",p:2992,pF:"2026-04-27",pMin:2992,pMax:3990,vol:1,f:6,q:1,a:["chocolate","chocolates","chocolate cerezas"],alt:"arandano"},
+  {id:"pack-3-un-nectar-manzana-190-ml",n:"Pack 3 un. Néctar Manzana 190 ml",c:"Frutas",p:973,pF:"2026-07-09",pMin:973,pMax:1390,vol:1,f:6,a:["nectar","nectares","nectars","nectar manzana"]},
+  {id:"espinaca",n:"Ensalada Espinaca 200 g",c:"Verduras",p:1890,pF:"2026-04-20",pMin:1890,pMax:1990,f:5,a:["espinaca","espinacas","ensalada","ensaladas","ensalada espinaca"]},
+  {id:"pasta",n:"Pasta Rigati Lucchetti Tr3S Vegetales 400 g",c:"Abarrotes",p:1180,pF:"2026-06-16",pMin:1140,pMax:1180,f:5,a:["pasta","fideos","tallarines","pastas","pasta rigati"]},
+  {id:"passata",n:"Puré de Tomate Passata La Molisana 690 g",c:"Verduras",p:2890,pF:"2026-05-11",f:5,a:["salsa de tomate","passata","pure de tomate","pure","pures","pure tomate","tomate","tomates"]},
+  {id:"film",n:"Film Plástico Aluplast en Rollo 20 m",c:"Otros",p:1350,pF:"2026-06-16",pMin:1320,pMax:1690,vol:1,f:5,a:["film","alusa","papel film","plastico","plasticos","plastico aluplast"]},
+  {id:"barrita-natural-mizos-sabor-arandano-35-",n:"Barrita Natural Mizos Sabor Arándano 35 g",c:"Frutas",p:4720,pF:"2026-07-09",pMin:4390,pMax:4720,f:5,a:["barrita","barritas","barrita sabor"]},
+  {id:"camote",n:"Camote Peruano Granel",c:"Verduras",p:3090,pF:"2026-07-03",pMin:2890,pMax:3090,f:4,a:["camote","batata","zapallo camote","camotes","camote peruano"]},
+  {id:"apio",n:"Apio Mata 1 un.",c:"Verduras",p:1490,pF:"2026-06-16",f:4,a:["apio","apios","apio mata"]},
+  {id:"grana",n:"Queso Grana Padano Latteria Soresina Envasado Trozo 125 g",c:"Lácteos",p:3414,pF:"2026-06-03",pMin:3414,pMax:5690,vol:1,f:4,a:["parmesano","grana padano","queso rallado","queso","quesos","queso grana"]},
+  {id:"pechuga",n:"Pechuga de Pollo Deshuesada Sin Marinar 800 g",c:"Carnes",p:9290,pF:"2026-05-11",f:4,a:["pollo","pechuga","pechuga de pollo","pechugas","pechuga pollo","pollos"],alt:"filetillos"},
+  {id:"filetillos",n:"Filetillos de Pollo Canto del Gallo Sin Marinar 580 g",c:"Carnes",p:6130,pF:"2026-05-20",pMin:6130,pMax:6290,f:4,a:["filetillos","filetillo de pollo","filetillo","filetillos pollo"]},
+  {id:"cerdo",n:"Lomo Centro Cerdo Super Cerdo 800 g",c:"Carnes",p:7490,pF:"2026-06-16",pMin:5190,pMax:7490,vol:1,f:4,a:["cerdo","lomo de cerdo","chuleta","lomo","lomos","lomo centro"]},
+  {id:"marraqueta",n:"Marraqueta Cuisine & Co Precocida 8 un.",c:"Panadería",p:2590,pF:"2026-03-09",f:4,a:["marraqueta","pan marraqueta","hallulla","marraquetas","marraqueta precocida"]},
+  {id:"bearRollo",n:"Rollo de Fruta Bear Strawberry Caja 100 g",c:"Otros",p:3990,pF:"2026-07-03",pMin:3990,pMax:6040,vol:1,f:4,a:["rollo de fruta","bear","rollo","rollos","rollo fruta"]},
+  {id:"cerveza",n:"Pack 12 un. Cerveza Royal Guard Premium Lager 5.0° 350 cc",c:"Bebidas",p:8490,pF:"2026-05-20",pMin:8490,pMax:8990,f:4,a:["cerveza","cervezas","royal guard","cerveza royal"]},
+  {id:"toallaP",n:"Toalla de Papel Nova Ultra Doble Hoja 26 m 2 un.",c:"Aseo",p:2437,pF:"2026-04-13",pMin:2437,pMax:2690,f:4,a:["toalla de papel","toalla nova","papel cocina","toalla absorbente","toalla","toallas","toalla papel"]},
+  {id:"bolsas",n:"Bolsa de Basura Virutex Bio Grande 80 x 110 cm 10 un.",c:"Aseo",p:1250,pF:"2026-06-16",pMin:1127,pMax:1450,vol:1,f:4,a:["bolsa de basura","bolsas","basura","basuras","basura virutex"]},
+  {id:"barra-nakd-fruta-y-frutos-secos-berry-de",n:"Barra Nakd Fruta y Frutos Secos Berry Delight 140 g",c:"Otros",p:5250,pF:"2026-01-12",pMin:3990,pMax:5250,vol:1,f:4,a:["barra","barras","barra nakd"]},
+  {id:"cebolla-malla-3-un",n:"Cebolla Malla 3 un.",c:"Verduras",p:1720,pF:"2026-06-04",pMin:1650,pMax:1790,f:4,a:["cebolla","cebollas"]},
+  {id:"huevos-ecoterra-gallinas-libres-20-un",n:"Huevos Ecoterra Gallinas Libres 20 un.",c:"Huevos",p:11020,pF:"2026-06-16",pMin:7455,pMax:11020,vol:1,f:4,a:["huevos","huevo","huevos ecoterra"]},
+  {id:"pack-3-un-jugo-100-fruta-manzana-190-ml",n:"Pack 3 un. Jugo 100% Fruta Manzana 190 ml",c:"Frutas",p:1990,pF:"2026-06-03",pMin:1990,pMax:2150,f:4,q:1,a:["jugo","jugos","jugo fruta"],alt:"platano"},
+  {id:"galletas-de-arroz-mizos-chocolate-naranj",n:"Galletas de Arroz Mizos Chocolate Naranja 25 g",c:"Frutas",p:560,pF:"2026-07-09",pMin:560,pMax:610,f:4,a:["galletas","galleta","galletas arroz"]},
+  {id:"cebolla-morada-granel",n:"Cebolla Morada Granel",c:"Verduras",p:1990,pF:"2026-06-04",f:4,a:["cebolla","cebollas","cebolla morada"]},
+  {id:"yogurt-loncoleche-proteina-natural-endul",n:"Yogurt Loncoleche Proteína Natural Endulzado 140 g",c:"Lácteos",p:600,pF:"2026-07-03",pMin:600,pMax:750,vol:1,f:4,a:["yogurt","yogurtes","yogurts","yogurt proteina"]},
+  {id:"zapallo",n:"Zapallo en Trozo 700 g",c:"Verduras",p:1990,pF:"2026-06-16",f:3,a:["zapallo","zapallos","zapallo trozo"]},
+  {id:"cilantro",n:"Cilantro Paquete 120 g",c:"Verduras",p:990,pF:"2026-06-04",f:3,a:["cilantro","cilantros","cilantro paquete"]},
+  {id:"pina",n:"Piña Pelada 1 un.",c:"Frutas",p:4290,pF:"2026-05-20",f:3,a:["piña","pina","anana","pinas","pina pelada"]},
+  {id:"yogNat",n:"Yogurt Colun Origen Natural 120 g",c:"Lácteos",p:380,pF:"2026-06-03",pMin:325,pMax:380,f:3,a:["yogurt natural","yogurt","yogurtes","yogurts","yogurt origen"]},
+  {id:"aceite",n:"Aceite de Oliva Huasco Extra Virgen 2 L",c:"Abarrotes",p:27490,pF:"2026-07-09",pMin:22990,pMax:27490,f:3,q:1,a:["aceite","aceite de oliva","oliva","aceites","aceite oliva","olivas"],alt:"arroz"},
+  {id:"lentejas",n:"Lentejas Rojas Martini 500 g",c:"Legumbres",p:2190,pF:"2026-06-24",pMin:2110,pMax:2190,f:3,a:["lenteja","lentejas","lentejas rojas"]},
+  {id:"kunaPuffs",n:"Puffs Kuna Foods Manzana Arándano 50 g",c:"Frutas",p:3770,pF:"2026-06-16",pMin:3590,pMax:3770,f:3,a:["puffs","kuna","puff","puffs manzana"]},
+  {id:"panales",n:"Pañales Pampers Premium Care 11-15 kg Talla XG 128 un.",c:"Bebé",p:35990,pF:"2026-07-09",pMin:33490,pMax:35990,f:3,a:["pañal","pañales","panales","pampers","panal"]},
+  {id:"queso-mantecoso-las-parcelas-de-valdivia",n:"Queso Mantecoso Las Parcelas de Valdivia Envasado Trozo 350 g",c:"Lácteos",p:6090,pF:"2025-12-19",pMin:3654,pMax:6090,vol:1,f:3,a:["queso","quesos","queso mantecoso"]},
+  {id:"nectarin-platano-exportacion-granel",n:"Nectarín Plátano Exportación Granel",c:"Frutas",p:2690,pF:"2026-02-14",pMin:2690,pMax:6990,vol:1,f:3,a:["nectarin","nectarines","nectarins","nectarin platano"]},
+  {id:"puffs-kuna-foods-pera-espinaca-individua",n:"Puffs Kuna Foods Pera Espinaca Individual 10 g",c:"Frutas",p:980,pF:"2026-07-03",pMin:890,pMax:980,f:3,a:["puffs","puff","puffs pera"]},
+  {id:"cereal-de-arroz-baby-mum-mum-baby-puffs-",n:"Cereal de Arroz Baby Mum Mum Baby Puffs Frutas y Arándano 50 g",c:"Frutas",p:3510,pF:"2026-06-16",pMin:3450,pMax:3530,f:3,a:["cereal","cereales","cereals","cereal arroz"]},
+  {id:"pasta-de-choclo-frutos-del-maipo-1-kg",n:"Pasta de Choclo Frutos del Maipo 1 kg",c:"Verduras",p:4760,pF:"2026-06-16",pMin:4760,pMax:4790,f:3,a:["pasta","pastas","pasta choclo"]},
+  {id:"pechuga-de-pollo-entera-kg",n:"Pechuga de Pollo Entera kg",c:"Carnes",p:4490,pF:"2026-06-03",pMin:4490,pMax:5690,vol:1,f:3,q:1,a:["pechuga","pechugas","pechuga pollo","pollo","pollos"],alt:"filetillos"},
+  {id:"pack-3-un-nectar-durazno-190-ml",n:"Pack 3 un. Néctar Durazno 190 ml",c:"Frutas",p:1090,pF:"2026-04-30",pMin:1090,pMax:1390,vol:1,f:3,a:["nectar","nectares","nectars","nectar durazno"]},
+  {id:"pack-3-un-nectar-berries-190-ml",n:"Pack 3 un. Néctar Berries 190 ml",c:"Bebidas",p:1090,pF:"2026-04-30",pMin:1090,pMax:1390,vol:1,f:3,a:["nectar","nectares","nectars","nectar berries"]},
+  {id:"rollo-de-fruta-bear-raspberry-caja-100-g",n:"Rollo de Fruta Bear Raspberry Caja 100 g",c:"Otros",p:5750,pF:"2026-04-27",f:3,a:["rollo","rollos","rollo fruta"]},
+  {id:"carne-molida-vacuno-4-grasa-500-g",n:"Carne Molida Vacuno 4% Grasa 500 g",c:"Carnes",p:7990,pF:"2026-07-09",pMin:6500,pMax:7990,f:3,a:["carne","carnes","carne molida"]},
+  {id:"rigati-talliani-al-huevo-400-g",n:"Rigati Talliani Al Huevo 400 g",c:"Huevos",p:975,pF:"2026-06-10",pMin:975,pMax:1350,vol:1,f:3,a:["rigati","rigatis","rigati talliani"]},
+  {id:"jamon-serrano-los-astures-lonchado-180-g",n:"Jamón Serrano Los Astures Lonchado 180 g",c:"Otros",p:7590,pF:"2026-05-26",pMin:7590,pMax:9290,f:3,a:["jamon","jamones","jamons","jamon serrano"]},
+  {id:"lechuga-lollo-rossa-hidroponica-1-un",n:"Lechuga Lollo Rossa Hidropónica 1 un.",c:"Verduras",p:1650,pF:"2026-06-10",f:3,a:["lechuga","lechugas","lechuga lollo"]},
+  {id:"galletas-saladas-club-social-original-21",n:"Galletas Saladas Club Social Original 216 g 9 Paquetes",c:"Snacks",p:1860,pF:"2026-05-20",pMin:1860,pMax:1890,f:3,a:["galletas","galleta","galletas saladas"]},
+  {id:"berenjena-1-un",n:"Berenjena 1 un.",c:"Verduras",p:790,pF:"2026-07-03",pMin:790,pMax:840,f:3,a:["berenjena","berenjenas"]},
+  {id:"espinaca-bolsa-280-g",n:"Espinaca Bolsa 280 g",c:"Verduras",p:1060,pF:"2026-07-03",f:3,a:["espinaca","espinacas"]},
+  {id:"espirales-talliani-al-huevo-400-g",n:"Espirales Talliani Al Huevo 400 g",c:"Huevos",p:975,pF:"2026-06-10",pMin:975,pMax:1300,vol:1,f:3,a:["espirales","espiral","espirales talliani"]},
+  {id:"cereal-organico-pacari-chocolate-250-g",n:"Cereal Orgánico Pacari Chocolate 250 g",c:"Snacks",p:6290,pF:"2026-07-03",pMin:4403,pMax:6290,vol:1,f:3,a:["cereal","cereales","cereals","cereal chocolate"]},
+  {id:"yogurt-loncoleche-proteina-frutilla-140-",n:"Yogurt Loncoleche Proteína Frutilla 140 g",c:"Lácteos",p:600,pF:"2026-07-09",pMin:600,pMax:750,vol:1,f:3,a:["yogurt","yogurtes","yogurts","yogurt proteina"]},
+  {id:"granola-proteica-underfive-almendra-crun",n:"Granola Proteica Underfive Almendra Crunch 300 g",c:"Otros",p:5820,pF:"2026-07-03",pMin:5690,pMax:5820,f:3,a:["granola","granolas","granola proteica"]},
+  {id:"jengibre",n:"Jengibre 100 g",c:"Verduras",p:1590,pF:"2026-04-27",f:2,raro:1,a:["jengibre"]},
+  {id:"mandarina",n:"Mandarina Granel",c:"Frutas",p:1952,pF:"2026-07-03",pMin:1952,pMax:2790,vol:1,f:2,raro:1,a:["mandarina","mandarinas"]},
+  {id:"pera",n:"Pera Packham's Granel",c:"Frutas",p:2190,pF:"2026-07-03",pMin:1590,pMax:2190,vol:1,f:2,raro:1,a:["pera","peras"]},
+  {id:"aguaGas",n:"Agua Benedictino Gasificada 3 L",c:"Bebidas",p:1095,pF:"2025-11-25",f:2,raro:1,a:["agua con gas","agua gasificada","soda"]},
+  {id:"cloro",n:"Cloro Gel Cif Normal 800 ml",c:"Limpieza",p:1900,pF:"2026-03-09",pMin:1790,pMax:1900,f:2,raro:1,a:["cloro","cif"]},
+  {id:"esponja",n:"Esponja Anatómica Home Care 3 un.",c:"Limpieza",p:1043,pF:"2026-04-01",pMin:930,pMax:1043,f:2,raro:1,a:["esponja","esponjas"]},
+  {id:"jabonL",n:"Jabón Líquido Elite 700 ml",c:"Limpieza",p:2390,pF:"2025-11-25",f:2,raro:1,a:["jabon","jabon liquido","jabon de manos"]},
+  {id:"pastaD",n:"Pasta Dental Sensodyne Repara & Protege Blanqueadora 2 un. 100 g",c:"Limpieza",p:9513,pF:"2026-02-24",pMin:9513,pMax:10890,f:2,raro:1,a:["pasta dental","pasta de dientes","dentifrico"]},
+  {id:"toallitas",n:"Toallas Húmedas WaterWipes 180 un.",c:"Bebé",p:9690,pF:"2026-04-30",f:2,raro:1,a:["toallitas","paños humedos","paños","waterwipes"]},
+  {id:"mantSin",n:"Mantequilla Soprole Sin Sal 250 g",c:"Lácteos",p:2704,pF:"2026-07-09",f:1,raro:1,a:["mantequilla","mantequilla sin sal","manteca"],alt:"mantCon"},
+  {id:"arrozInt",n:"Arroz Grado 1 Tucapel Integral 1 kg",c:"Despensa",p:1990,pF:"2026-07-09",f:1,raro:1,a:["arroz integral"]},
+  {id:"maicena",n:"Maicena Cuisine & Co Sobre 250 g",c:"Despensa",p:1990,pF:"2026-07-09",f:1,raro:1,a:["maicena","chuño"]},
+  {id:"quinoa",n:"Quinoa Blanca Manare Orgánica 400 g",c:"Despensa",p:5050,pF:"2026-07-09",f:1,raro:1,a:["quinoa","quinua"]},
+  {id:"fosforos",n:"Fósforos Gran Andes Caja 220 un.",c:"Limpieza",p:1350,pF:"2026-07-03",f:1,raro:1,a:["fosforos","cerillas"]},
+  {id:"papelH",n:"Papel Higiénico Elite Doble Hoja Ultra Suave 50 m 18 un.",c:"Limpieza",p:15990,pF:"2026-03-28",f:1,raro:1,a:["papel higienico","papel confort","confort"]},
+  {id:"servilleta",n:"Servilletas de Mesa Elite 200 un.",c:"Limpieza",p:2690,pF:"2025-12-09",f:1,raro:1,a:["servilleta","servilletas"]},
+  {id:"desodor",n:"Desodorante Roll On Etiquet Pack Clásico 60 g 2 un.",c:"Limpieza",p:6190,pF:"2025-12-29",f:1,raro:1,a:["desodorante","roll on"]},
+];
+const PRODS = Object.fromEntries(CATALOGO.map(p=>[p.id,p]));
+
+function normalizar(s){
+  return String(s==null?"":s).toLowerCase().trim()
+    .normalize("NFD").replace(/[\u0300-\u036f]/g,"")
+    .replace(/[^a-z0-9\s]/g," ").replace(/\s+/g," ").trim();
+}
+/* Texto libre → producto del catálogo. null si no reconoce nada. */
+function resolverProducto(texto){
+  const q = normalizar(texto);
+  if(!q) return null;
+  let mejor=null, score=0;
+  for(const p of CATALOGO){
+    for(const alias of p.a){
+      const na = normalizar(alias);
+      let s = 0;
+      if(q===na) s=100;
+      else if(q.startsWith(na+" ")||q.endsWith(" "+na)) s=80;
+      else if(q.includes(na) && na.length>=4) s=60+na.length;
+      else if(na.includes(q) && q.length>=4) s=40+q.length;
+      if(s>score){ score=s; mejor=p; }
+    }
+  }
+  return mejor ? {prod:mejor, exacto:score>=80} : null;
+}
+/* Producto asociado a un ítem de "falta algo" */
+</script>
 <script>/* ============================================================================
-   Control de la Casa · lógica
+   Control de la Casa · v2
    ----------------------------------------------------------------------------
-   Escribe en las MISMAS llaves que la cocina: menu:<semana>, recetario, falta.
-   Por eso un cambio acá aparece en la tablet sin que nadie recargue nada.
+   Reconcebido: no es un editor con pestañas, es el lugar donde B interactúa
+   con el sistema. Tres verbos:
+     PROPONER — Claude arma la semana (Edge Function), pauta.js la verifica
+                acá mismo, B aprueba con el dedo. Nada se escribe solo.
+     DECIR    — "falta palta" se resuelve al producto exacto de Jumbo con el
+                mismo catálogo de la cocina. Determinista, sin servidor.
+     SUBIR    — recetas médicas y referentes. Próxima entrega; se dice así.
+   El editor manual sigue existiendo, pero como pantalla secundaria.
    ========================================================================== */
 "use strict";
 
-const DIAS = ["Lunes","Martes","Miércoles","Jueves","Viernes","Sábado","Domingo"];
+const DIAS  = ["Lunes","Martes","Miércoles","Jueves","Viernes","Sábado","Domingo"];
+const MESES = ["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic"];
 let S = Store.create({ prefix:"", shared:true });
 let MODO = "local";
 let DRV = null;
 
 const estado = {
-  vista: "semana",
+  vista: "home",
   semana: null,
   menu: [],
   recetas: {},
   falta: [],
-  sucio: false,          // hay cambios sin guardar
+  propuesta: null,
+  proponiendo: false,
+  sucio: false,
   cargando: true
 };
 
-/* La cocina identifica la semana por la FECHA DEL LUNES (menu:2026-08-03),
-   no por número de semana. Si acá se calcula distinto, las dos apps escriben
-   en llaves diferentes y no se ven nunca. Una sola fórmula, la de la cocina. */
-function lunesDe(){ const d=new Date(); d.setDate(d.getDate()-((d.getDay()+6)%7)); return d; }
+/* La cocina identifica la semana por la FECHA DEL LUNES (menu:2026-08-03).
+   Una sola fórmula para ambas apps. */
+function lunesDe(){ const d = new Date(); d.setDate(d.getDate() - ((d.getDay()+6)%7)); return d; }
 function iso(d){ return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
 function claveSemana(){ return iso(lunesDe()); }
-function fechaCorta(i){
-  const d = lunesDe(); d.setDate(d.getDate()+i);
-  return d.getDate() + " " + ["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic"][d.getMonth()];
-}
+function fechaCorta(i){ const d = lunesDe(); d.setDate(d.getDate()+i); return d.getDate()+" "+MESES[d.getMonth()]; }
 const esc = s => String(s==null?"":s).replace(/[&<>"']/g, c =>
   ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 
 /* ------------------------------------------------------------------ datos */
 async function cargar(){
   estado.cargando = true; pintar();
-  estado.semana = claveSemana();
-  const base   = (await S.get("recetas:base", null)) || {};
-  const propias= (await S.get("recetario", null))    || {};
+  estado.semana  = claveSemana();
+  const base     = (await S.get("recetas:base", null)) || {};
+  const propias  = (await S.get("recetario", null))    || {};
   estado.recetas = Object.assign({}, base, propias);
   const m = await S.get("menu:" + estado.semana, null);
-  estado.menu = (Array.isArray(m) && m.length === 7) ? m.slice() : new Array(7).fill(null);
+  estado.menu  = (Array.isArray(m) && m.length === 7) ? m.slice() : new Array(7).fill(null);
   estado.falta = (await S.get("falta", null)) || [];
   estado.sucio = false;
   estado.cargando = false;
   pintar();
 }
 
-async function guardarMenu(){
+async function guardarMenu(origen){
   const v = Pauta.validar(estado.menu, estado.recetas);
   const graves = v.errores.filter(e => e.tipo === "sodio");
-  /* El sodio no es una preferencia: es indicación médica para uno de los
-     niños. Las frecuencias se pueden desviar una semana; esto no en silencio. */
   if(graves.length && !confirm("Este menú tiene " + graves.length
       + " plato(s) que rompen el régimen sin sal:\n\n"
-      + graves.map(e => "· " + e.texto).join("\n")
-      + "\n\n¿Guardar igual?")) return;
+      + graves.map(e => "· " + e.texto).join("\n") + "\n\n¿Guardar igual?")) return false;
   await S.set("menu:" + estado.semana, estado.menu);
+  try{ if(DRV) await DRV.anotar("menu_guardado", "control",
+        { semana: estado.semana, menu: estado.menu, origen: origen || "manual" }); }catch(e){}
   estado.sucio = false;
   aviso("Menú guardado · la tablet ya lo tiene");
   pintar();
+  return true;
 }
 
+/* Guarda releyendo antes — mismo patrón que la cocina — para no pisar lo
+   que la casa anotó mientras esto estaba abierto. */
 async function guardarFalta(){
+  const remoto = (await S.get("falta", null)) || [];
+  const mios = new Set(estado.falta.map(i => i && i.id).filter(Boolean));
+  const otros = remoto.filter(i => i && i.id && !mios.has(i.id));
+  estado.falta = [...estado.falta, ...otros];
   await S.set("falta", estado.falta);
+  pintar();
+}
+
+/* --------------------------------------------------------------- proponer */
+async function proponer(){
+  if(MODO !== "nube") return aviso("Sin conexión con la base");
+  if(estado.proponiendo) return;
+  estado.proponiendo = true; pintar();
+  try{
+    const r = await DRV._sb.functions.invoke("casa-ia", { body: { accion: "proponer_semana" } });
+    if(r.error) throw new Error(r.error.message || "error de la función");
+    const d = r.data;
+    if(!d || !d.ok) throw new Error((d && d.error) || "respuesta vacía");
+    /* El modelo propone; el teléfono verifica. La confianza está en pauta.js,
+       no en la promesa del modelo. */
+    estado.propuesta = { menu: d.menu, razon: d.razon,
+                         val: Pauta.validar(d.menu, estado.recetas) };
+  }catch(e){
+    const t = String(e.message || e);
+    aviso(t.indexOf("Failed to fetch") >= 0 || t.indexOf("FunctionsFetchError") >= 0
+      ? "La función casa-ia no está publicada todavía"
+      : "No se pudo proponer: " + t.slice(0, 90));
+  }
+  estado.proponiendo = false; pintar();
+}
+
+async function aprobarPropuesta(){
+  estado.menu = estado.propuesta.menu.slice();
+  estado.sucio = true;
+  const ok = await guardarMenu("claude");
+  if(ok) estado.propuesta = null;
   pintar();
 }
 
@@ -742,78 +944,96 @@ async function guardarFalta(){
 function pintar(){
   const app = document.getElementById("app");
   if(estado.cargando){ app.innerHTML = '<div class="vacio">Cargando…</div>'; return; }
-  app.innerHTML = estado.vista === "semana" ? vistaSemana()
-                : estado.vista === "falta"  ? vistaFalta()
-                : vistaRecetas();
-  document.querySelectorAll(".tab").forEach(t =>
-    t.classList.toggle("on", t.dataset.vista === estado.vista));
+  app.innerHTML = estado.vista === "editar"  ? vistaEditar()
+                : estado.vista === "recetas" ? vistaRecetas()
+                : vistaHome();
   const b = document.getElementById("barra-guardar");
-  b.classList.toggle("on", estado.sucio);
-  const n = document.getElementById("badge-falta");
-  n.textContent = estado.falta.length || "";
-  n.style.display = estado.falta.length ? "" : "none";
+  b.classList.toggle("on", estado.sucio && estado.vista === "editar");
+  const atras = document.getElementById("atras");
+  atras.style.display = estado.vista === "home" ? "none" : "";
 }
 
-function vistaSemana(){
-  const hoy = (new Date().getDay() + 6) % 7;
-  /* Si la base todavía no tiene recetas, una lista de selectores vacíos no
-     dice nada. Mejor decir qué falta y qué hacer. */
-  if(!Object.keys(estado.recetas).length)
-    return '<div class="vacio">La base todavía no tiene recetas.<br><br>'
-         + 'Abre <b>Cocina</b> una vez en cualquier dispositivo: al arrancar '
-         + 'publica el recetario y el menú de la semana, y esto se llena solo.'
-         + '<br><br><small style="color:#8a8578">buscando: recetas:base · menu:'
-         + esc(estado.semana) + '</small></div>';
-  return '<div class="lista">' + estado.menu.map((id,i) => {
-    const r = estado.recetas[id];
-    return '<div class="fila' + (i===hoy ? " hoy" : "") + '">'
-      + '<div class="dia"><b>' + DIAS[i] + '</b><span>' + fechaCorta(i) + '</span></div>'
-      + '<select data-idx="' + i + '" class="sel">'
-      + '<option value=""' + (id ? "" : " selected") + '>— sin definir —</option>'
-      + Object.keys(estado.recetas).map(k =>
-          '<option value="' + esc(k) + '"' + (k===id ? " selected" : "") + '>'
-          + esc(estado.recetas[k].name) + '</option>').join("")
-      + '</select>'
-      + (r && r.tanda ? '<span class="porc">' + r.tanda + ' porc.</span>' : "")
-      + '</div>';
-  }).join("") + '</div>'
-  + panelPauta()
-  + '<p class="nota">Cambia lo que quieras y guarda al final. La tablet se '
-  + 'actualiza sola, sin que nadie toque nada allá.</p>';
-}
-
-/* La pauta se revisa en vivo, mientras se edita, no al guardar. Avisar
-   después de que alguien decidió es retarlo; avisar mientras decide es
-   ayudarlo. */
-function panelPauta(){
-  const v = Pauta.validar(estado.menu, estado.recetas);
-  const chip = k => {
+function chipPauta(v){
+  return '<div class="pcs">' + Object.keys(Pauta.CATS).map(k => {
     const hay = v.conteo[k], meta = Pauta.CATS[k].porSemana;
     const cl = hay === meta ? "ok" : (hay < meta ? "mal" : "warn");
     return '<span class="pc ' + cl + '">' + esc(Pauta.CATS[k].label)
          + ' <b>' + hay + '/' + meta + '</b></span>';
-  };
-  let h = '<div class="pauta"><div class="pt">PAUTA DE LA SEMANA</div>'
-        + '<div class="pcs">' + Object.keys(Pauta.CATS).map(chip).join("") + '</div>';
-  const todos = v.errores.concat(v.avisos).filter(x => x.tipo !== "vacio");
-  if(todos.length) h += '<ul class="pv">' + todos.map(x =>
-      '<li class="' + (v.errores.indexOf(x) >= 0 ? "e" : "a") + '">' + esc(x.texto) + '</li>').join("") + '</ul>';
-  else if(!v.avisos.length) h += '<div class="pok">Cuadra con la pauta</div>';
-  return h + '</div>';
+  }).join("") + '</div>';
 }
 
-function vistaFalta(){
-  if(!estado.falta.length)
-    return '<div class="vacio">La casa no ha anotado nada.</div>' + campoFalta();
-  return '<div class="lista">' + estado.falta.map((f,i) =>
-      '<div class="fila"><div class="txt">' + esc(f.name || f.texto || f)
-      + (f.prodId ? '<span class="sub">' + esc(f.prodId) + '</span>' : "")
-      + '</div><button class="x" data-quitar="' + i + '">✕</button></div>').join("")
-    + '</div>' + campoFalta();
+function vistaHome(){
+  const sinRecetas = !Object.keys(estado.recetas).length;
+  if(sinRecetas)
+    return '<div class="vacio">La base todavía no tiene recetas.<br><br>'
+      + 'Abre <b>Cocina</b> una vez en cualquier dispositivo y esto se llena solo.</div>';
+
+  const v = Pauta.validar(estado.menu, estado.recetas);
+  let h = "";
+
+  if(estado.propuesta){
+    const p = estado.propuesta;
+    h += '<div class="tarjeta prop"><div class="tt">PROPUESTA DE CLAUDE</div>'
+      + '<div class="dias">' + p.menu.map((id,i) =>
+          '<div class="d"><span>' + DIAS[i].slice(0,3) + '</span><b>'
+          + esc(estado.recetas[id] ? estado.recetas[id].name : id) + '</b></div>').join("") + '</div>'
+      + (p.razon ? '<div class="razon">' + esc(p.razon) + '</div>' : "")
+      + chipPauta(p.val)
+      + (p.val.ok ? '<div class="pok">Verificado acá: cuadra con la pauta</div>'
+                  : '<ul class="pv">' + p.val.errores.map(e =>
+                      '<li class="e">' + esc(e.texto) + '</li>').join("") + '</ul>')
+      + '<div class="botones">'
+      + '<button class="primario" data-aprobar>Aprobar y mandar a la cocina</button>'
+      + '<button class="secundario" data-descartar>Descartar</button></div></div>';
+  }
+
+  h += '<div class="tarjeta"><div class="tt">SEMANA DEL '
+    + fechaCorta(0).toUpperCase() + '</div>'
+    + '<div class="dias toca" data-ir="editar">' + estado.menu.map((id,i) =>
+        '<div class="d' + (i === (new Date().getDay()+6)%7 ? " hoy" : "") + '">'
+        + '<span>' + DIAS[i].slice(0,3) + '</span><b>'
+        + esc(id && estado.recetas[id] ? estado.recetas[id].name : "— sin definir —")
+        + '</b></div>').join("") + '</div>'
+    + chipPauta(v)
+    + '<div class="mini">Tocar la semana para editarla a mano</div></div>';
+
+  if(!estado.propuesta)
+    h += '<button class="accion" data-proponer' + (estado.proponiendo ? " disabled" : "") + '>'
+      + (estado.proponiendo ? "Armando la semana…" : "✦ Que Claude proponga la semana")
+      + '</button>';
+
+  h += '<div class="tarjeta"><div class="tt">FALTA ALGO</div>'
+    + '<div class="agregar"><input id="nueva-falta" placeholder="palta, pañales, detergente…" '
+    + 'autocomplete="off" enterkeyhint="done"><button data-add-falta>Anotar</button></div>'
+    + (estado.falta.length ? '<div class="flist">' + estado.falta.map((f,i) => {
+        const p = f.prodId && typeof PRODS !== "undefined" ? PRODS[f.prodId] : null;
+        return '<div class="fitem"><div class="txt">' + esc(f.name || f)
+          + (p ? '<span class="sub">' + esc(p.n) + ' · ' + precioTxt(p) + '</span>' : "")
+          + '</div><button class="x" data-quitar="' + i + '">✕</button></div>';
+      }).join("") + '</div>' : '<div class="mini">La casa no ha anotado nada.</div>')
+    + '</div>';
+
+  h += '<div class="tarjeta off"><div class="tt">SUBIR</div>'
+    + '<div class="mini">Recetas médicas y referentes de alimentación. '
+    + 'Es la próxima entrega: se sube la foto y se procesa sola. Por ahora, '
+    + 'esos documentos van al proyecto de Claude, como siempre.</div></div>';
+
+  h += '<button class="enlace" data-ir="recetas">Ver y agregar recetas →</button>';
+  return h;
 }
-function campoFalta(){
-  return '<div class="agregar"><input id="nueva-falta" placeholder="Agregar algo que falta…" '
-       + 'autocomplete="off"><button data-add-falta>Agregar</button></div>';
+
+function vistaEditar(){
+  const hoy = (new Date().getDay()+6)%7;
+  return '<div class="lista">' + estado.menu.map((id,i) =>
+    '<div class="fila' + (i===hoy ? " hoy" : "") + '">'
+    + '<div class="dia"><b>' + DIAS[i] + '</b><span>' + fechaCorta(i) + '</span></div>'
+    + '<select data-idx="' + i + '" class="sel">'
+    + '<option value=""' + (id ? "" : " selected") + '>— sin definir —</option>'
+    + Object.keys(estado.recetas).map(k =>
+        '<option value="' + esc(k) + '"' + (k===id ? " selected":"") + '>'
+        + esc(estado.recetas[k].name) + '</option>').join("")
+    + '</select></div>').join("") + '</div>'
+  + '<div class="tarjeta" style="margin-top:14px">' + chipPauta(Pauta.validar(estado.menu, estado.recetas)) + '</div>';
 }
 
 function vistaRecetas(){
@@ -821,21 +1041,21 @@ function vistaRecetas(){
   return '<div class="lista">' + ks.map(k => {
       const r = estado.recetas[k];
       return '<div class="fila"><div class="txt">' + esc(r.name)
-        + '<span class="sub">' + esc(r.cat || "sin categoría")
+        + '<span class="sub">' + esc((r.cats||[r.cat]).filter(Boolean).join(", ") || "sin categoría")
         + (r.tanda ? " · " + r.tanda + " porc." : "") + '</span></div></div>';
     }).join("") + '</div>'
   + '<div class="agregar col">'
   + '<input id="nr-nombre" placeholder="Nombre de la receta">'
-  + '<div class="par"><input id="nr-cat" placeholder="Categoría (legumbre, pescado…)">'
+  + '<div class="par"><input id="nr-cat" placeholder="Categorías (legumbre, cereal…)">'
   + '<input id="nr-tanda" type="number" inputmode="numeric" placeholder="Porciones"></div>'
   + '<button data-add-receta>Agregar receta</button></div>'
-  + '<p class="nota">Las recetas nuevas quedan disponibles en la cocina de inmediato.</p>';
+  + '<p class="nota">Queda disponible en la cocina y en las propuestas de Claude de inmediato.</p>';
 }
 
 function aviso(t){
   const e = document.getElementById("toast");
   e.textContent = t; e.classList.add("on");
-  clearTimeout(aviso._t); aviso._t = setTimeout(() => e.classList.remove("on"), 2600);
+  clearTimeout(aviso._t); aviso._t = setTimeout(() => e.classList.remove("on"), 3200);
 }
 
 /* --------------------------------------------------------------- eventos */
@@ -852,22 +1072,31 @@ document.addEventListener("change", e => {
 });
 
 document.addEventListener("click", async e => {
-  const t = e.target.closest("[data-vista],[data-quitar],[data-add-falta],[data-add-receta],#guardar");
+  const t = e.target.closest("[data-ir],[data-proponer],[data-aprobar],[data-descartar],[data-quitar],[data-add-falta],[data-add-receta],#guardar,#atras");
   if(!t) return;
 
-  if(t.dataset.vista){ estado.vista = t.dataset.vista; return pintar(); }
-  if(t.id === "guardar") return guardarMenu();
+  if(t.id === "atras" || t.dataset.ir === "home"){ estado.vista = "home"; return pintar(); }
+  if(t.dataset.ir){ estado.vista = t.dataset.ir; return pintar(); }
+  if(t.hasAttribute("data-proponer")) return proponer();
+  if(t.hasAttribute("data-aprobar"))  return aprobarPropuesta();
+  if(t.hasAttribute("data-descartar")){ estado.propuesta = null; return pintar(); }
+  if(t.id === "guardar") return guardarMenu("manual");
 
   if(t.dataset.quitar != null){
     estado.falta.splice(Number(t.dataset.quitar), 1);
     return guardarFalta();
   }
   if(t.hasAttribute("data-add-falta")){
-    const i = document.getElementById("nueva-falta");
-    const v = (i.value || "").trim();
-    if(!v) return;
-    estado.falta.push({ name: v, ts: Date.now(), por: "control" });
-    i.value = "";
+    const inp = document.getElementById("nueva-falta");
+    const txt = (inp.value || "").trim();
+    if(!txt) return;
+    const r = typeof resolverProducto === "function" ? resolverProducto(txt) : null;
+    estado.falta.unshift({
+      id: "f_" + Date.now().toString(36) + Math.random().toString(36).slice(2,5),
+      name: txt, prodId: r ? r.prod.id : null, got: false, por: "control"
+    });
+    inp.value = "";
+    aviso(r ? "«" + txt + "» → " + r.prod.n.slice(0,36) + " ✓" : "«" + txt + "» anotado ✓");
     return guardarFalta();
   }
   if(t.hasAttribute("data-add-receta")){
@@ -876,8 +1105,9 @@ document.addEventListener("click", async e => {
     const id = n.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"")
                 .replace(/[^a-z0-9]+/g,"_").replace(/^_|_$/g,"").slice(0,28);
     if(estado.recetas[id]) return aviso("Ya existe una receta con ese nombre");
-    const r = { name:n,
-                cat: document.getElementById("nr-cat").value.trim() || null,
+    const cats = document.getElementById("nr-cat").value.split(",")
+                  .map(x=>x.trim().toLowerCase()).filter(Boolean);
+    const r = { name:n, cats: cats.length ? cats : null,
                 tanda: Number(document.getElementById("nr-tanda").value) || 8 };
     const propias = (await S.get("recetario", null)) || {};
     propias[id] = r;
@@ -905,9 +1135,7 @@ async function iniciarAlmacenamiento(){
     DRV = await SupabaseDriver({});
     S = Store.create({ driver: DRV, prefix:"" });
     MODO = "nube"; marcarEstado();
-    /* Si la casa anota algo en la tablet mientras esto está abierto, aparece
-       acá solo. Salvo que haya edición sin guardar: pisarla sería peor. */
-    DRV.onCambio(() => { S._limpiarCache(); if(!estado.sucio) cargar(); });
+    DRV.onCambio(() => { S._limpiarCache(); if(!estado.sucio && !estado.propuesta) cargar(); });
   }catch(err){
     MODO = "local"; marcarEstado();
     pedirLlave(String(err.message||err).indexOf("SIN_CREDENCIALES") >= 0
