@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="Control">
+<meta name="theme-color" content="#1C2026">
+<title>Control de la Casa</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="../apple-touch-icon-control.png">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<style>
+:root{--crema:#FAF7F0;--tinta:#1C2026;--ambar:#F0A834;--linea:#e2ddd2;--gris:#8a8578;--azul:#4a6d8c}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;background:var(--crema);color:var(--tinta);
+  font-family:system-ui,-apple-system,"Segoe UI",sans-serif;
+  padding-bottom:env(safe-area-inset-bottom)}
+header{position:sticky;top:0;z-index:10;background:var(--tinta);color:var(--crema);
+  padding:calc(12px + env(safe-area-inset-top)) 16px 12px}
+.h1{font-weight:800;letter-spacing:.06em;font-size:.92rem}
+#estado{font-size:.72rem;letter-spacing:.04em;margin-top:3px;display:block}
+#estado.ok{color:#7fc4a0} #estado.mal{color:#e0a08a}
+nav{display:flex;background:var(--tinta);padding:0 8px}
+.tab{flex:1;background:none;border:0;color:#9a958a;font:700 .82rem system-ui;
+  padding:11px 4px 13px;border-bottom:2.5px solid transparent;position:relative}
+.tab.on{color:var(--crema);border-bottom-color:var(--ambar)}
+#badge-falta{position:absolute;top:5px;right:14px;background:var(--ambar);color:var(--tinta);
+  font-size:.62rem;font-weight:800;border-radius:9px;padding:1px 5px;min-width:15px}
+main{padding:14px 14px 96px}
+.lista{display:flex;flex-direction:column;gap:9px}
+.fila{background:#fff;border:1px solid var(--linea);border-radius:12px;padding:11px 13px;
+  display:flex;align-items:center;gap:11px}
+.fila.hoy{border-color:var(--ambar);border-width:2px;background:#fffdf6}
+.dia{min-width:74px;line-height:1.25}
+.dia b{display:block;font-size:.86rem}
+.dia span{font-size:.7rem;color:var(--gris);letter-spacing:.03em}
+.sel{flex:1;min-width:0;font:600 .9rem system-ui;padding:9px 8px;border:1px solid var(--linea);
+  border-radius:9px;background:var(--crema);color:var(--tinta);appearance:none}
+.porc{font-size:.68rem;font-weight:700;color:#3d6b52;background:#e6f2ea;
+  border-radius:7px;padding:3px 6px;white-space:nowrap}
+.txt{flex:1;font-weight:600;font-size:.92rem;line-height:1.3}
+.txt .sub{display:block;font-weight:400;font-size:.72rem;color:var(--gris);margin-top:2px}
+.x{border:0;background:none;color:var(--gris);font-size:1.05rem;padding:6px 4px}
+.vacio{text-align:center;color:var(--gris);padding:34px 10px;font-size:.9rem}
+.agregar{margin-top:16px;display:flex;gap:8px}
+.agregar.col{flex-direction:column}
+.agregar .par{display:flex;gap:8px}
+.agregar input{flex:1;min-width:0;padding:12px;border:1px solid var(--linea);border-radius:10px;
+  font:400 .92rem system-ui;background:#fff}
+.agregar button{padding:12px 18px;border:0;border-radius:10px;background:var(--tinta);
+  color:var(--crema);font:700 .88rem system-ui;white-space:nowrap}
+.nota{color:var(--gris);font-size:.78rem;line-height:1.5;margin:18px 2px 0}
+#barra-guardar{position:fixed;left:0;right:0;bottom:0;padding:12px 14px
+  calc(12px + env(safe-area-inset-bottom));background:linear-gradient(transparent,var(--crema) 34%);
+  transform:translateY(120%);transition:transform .22s;z-index:20}
+#barra-guardar.on{transform:none}
+#guardar{width:100%;padding:15px;border:0;border-radius:12px;background:var(--ambar);
+  color:var(--tinta);font:800 .96rem system-ui}
+#toast{position:fixed;left:50%;bottom:88px;transform:translate(-50%,26px);opacity:0;
+  background:var(--tinta);color:var(--crema);padding:10px 16px;border-radius:10px;
+  font:600 .82rem system-ui;transition:.22s;pointer-events:none;z-index:30;max-width:88vw;text-align:center}
+#toast.on{opacity:1;transform:translate(-50%,0)}
+#llave{position:fixed;inset:0;z-index:999;background:var(--crema);display:flex;
+  align-items:center;justify-content:center;padding:26px}
+.lv-caja{max-width:420px;width:100%;text-align:center}
+.lv-t{font-weight:800;font-size:1.4rem;letter-spacing:.03em}
+.lv-ln{width:62px;height:5px;background:var(--ambar);border-radius:3px;margin:13px auto 20px}
+.lv-caja p{color:#4a4f57;font-size:.93rem;line-height:1.5}
+#lv-txt{width:100%;margin-top:14px;padding:12px;border:1.5px solid var(--linea);border-radius:10px;
+  font:400 .8rem/1.4 ui-monospace,monospace;background:#fff;resize:vertical}
+#lv-err{min-height:20px;margin-top:7px;font-size:.84rem;color:#8c3a2a}
+#lv-ok{padding:13px 30px;border:0;border-radius:10px;background:var(--tinta);color:var(--crema);
+  font:700 .93rem system-ui}
+.lv-caja small{display:block;margin-top:18px;font-size:.76rem;color:var(--gris);line-height:1.5}
+</style>
+</head>
+<body>
+<header>
+  <div class="h1">CONTROL DE LA CASA</div>
+  <span id="estado" class="mal">○ conectando…</span>
+</header>
+<nav>
+  <button class="tab on" data-vista="semana">Semana</button>
+  <button class="tab" data-vista="falta">Falta<span id="badge-falta" style="display:none"></span></button>
+  <button class="tab" data-vista="recetas">Recetas</button>
+</nav>
+<main id="app"><div class="vacio">Cargando…</div></main>
+<div id="barra-guardar"><button id="guardar">Guardar el menú de la semana</button></div>
+<div id="toast"></div>
+<script>/* ============================================================================
+   store.js · Capa de persistencia de Central de la Casa
+   ----------------------------------------------------------------------------
+   Por qué existe: hoy la app llama a `window.storage` directo, repartido por
+   todo el archivo. Eso amarra la app al sistema de artifacts de Claude. Esta
+   capa deja UNA sola puerta de salida. El día que haya que migrar a Supabase,
+   Firebase o lo que sea, se escribe un driver nuevo y no se toca nada más.
+
+   Además arregla tres cosas molestas del storage crudo:
+     · `get` de una clave inexistente LANZA excepción → acá devuelve el default
+     · todo es string → acá se serializa/deserializa JSON solo
+     · cada lectura es un viaje de red → acá hay caché en memoria
+
+   Uso:
+     const S = Store.create({ prefix:"cc:", shared:true });
+     await S.ready();
+     const falta = await S.get("falta", []);
+     await S.set("falta", [...falta, item]);
+   ========================================================================== */
+(function (root) {
+  "use strict";
+
+  /* ---- Reglas de clave del storage subyacente -----------------------------
+     Sin espacios, sin / \ ' " y bajo 200 caracteres. Normalizamos en vez de
+     fallar: si alguien escribe "menu semana", queda "menu_semana".          */
+  var MAX_KEY = 190;
+  function sanitizarClave(k) {
+    var s = String(k == null ? "" : k).trim()
+      .replace(/[\s]+/g, "_")
+      .replace(/[\/\\'"]/g, "-");
+    if (!s) throw new Error("store: clave vacía");
+    if (s.length > MAX_KEY) s = s.slice(0, MAX_KEY);
+    return s;
+  }
+
+  /* ---- Driver A: window.storage (producción, dentro del artifact) -------- */
+  function driverArtifact() {
+    var api = root.storage;
+    return {
+      nombre: "artifact",
+      disponible: !!(api && api.get && api.set),
+      get: function (k, shared) {
+        return api.get(k, shared).then(function (r) {
+          return r ? r.value : null;
+        }).catch(function () { return null; });   // clave inexistente → null
+      },
+      set: function (k, v, shared) { return api.set(k, v, shared); },
+      del: function (k, shared) { return api.delete(k, shared); },
+      list: function (p, shared) {
+        return api.list(p, shared).then(function (r) {
+          return r && r.keys ? r.keys : [];
+        }).catch(function () { return []; });
+      }
+    };
+  }
+
+  /* ---- Driver B: memoria (tests en node, y dev abriendo el HTML local) --- */
+  function driverMemoria(seed) {
+    var m = Object.assign({}, seed || {});
+    return {
+      nombre: "memoria",
+      disponible: true,
+      get: function (k) { return Promise.resolve(k in m ? m[k] : null); },
+      set: function (k, v) { m[k] = v; return Promise.resolve({ key: k, value: v }); },
+      del: function (k) { delete m[k]; return Promise.resolve({ key: k, deleted: true }); },
+      list: function (p) {
+        return Promise.resolve(Object.keys(m).filter(function (k) {
+          return !p || k.indexOf(p) === 0;
+        }));
+      },
+      _dump: function () { return m; }
+    };
+  }
+
+  /* ====================================================================== */
+  function create(opts) {
+    opts = opts || {};
+    var prefix = opts.prefix || "cc:";
+    var shared = opts.shared !== false;          // por defecto compartido
+    var driver = opts.driver || (driverArtifact().disponible
+      ? driverArtifact()
+      : driverMemoria(opts.seed));
+
+    var cache = Object.create(null);   // clave completa → valor decodificado
+    var oyentes = [];
+    var estado = { conectado: driver.nombre === "artifact", ultimoError: null };
+
+    function full(k) { return prefix + sanitizarClave(k); }
+
+    function decodificar(raw, fallback) {
+      if (raw == null) return fallback;
+      if (typeof raw !== "string") return raw;
+      try { return JSON.parse(raw); } catch (e) { return raw; }
+    }
+
+    function avisar(tipo, clave, valor) {
+      for (var i = 0; i < oyentes.length; i++) {
+        try { oyentes[i]({ tipo: tipo, clave: clave, valor: valor, estado: estado }); }
+        catch (e) { /* un oyente roto no puede voltear la escritura */ }
+      }
+    }
+
+    var API = {
+      driver: driver.nombre,
+      estado: estado,
+
+      /* Lectura. NUNCA lanza: si algo falla devuelve el fallback y marca el
+         estado como desconectado, para que la UI pueda mostrarlo.           */
+      get: function (k, fallback) {
+        var fk = full(k);
+        if (fk in cache) return Promise.resolve(cache[fk]);
+        return driver.get(fk, shared).then(function (raw) {
+          var v = decodificar(raw, fallback === undefined ? null : fallback);
+          cache[fk] = v;
+          estado.conectado = true;
+          return v;
+        }).catch(function (e) {
+          estado.conectado = false; estado.ultimoError = String(e);
+          return fallback === undefined ? null : fallback;
+        });
+      },
+
+      /* Escritura write-through: la caché se actualiza al toque para que la
+         UI responda, y si el backend falla se avisa sin perder el valor.     */
+      set: function (k, valor) {
+        var fk = full(k);
+        cache[fk] = valor;
+        avisar("set", k, valor);
+        var raw = typeof valor === "string" ? valor : JSON.stringify(valor);
+        return driver.set(fk, raw, shared).then(function (r) {
+          estado.conectado = true; estado.ultimoError = null;
+          avisar("sync", k, valor);
+          return r;
+        }).catch(function (e) {
+          estado.conectado = false; estado.ultimoError = String(e);
+          avisar("error", k, valor);
+          return null;
+        });
+      },
+
+      del: function (k) {
+        var fk = full(k);
+        delete cache[fk];
+        avisar("del", k, null);
+        return driver.del(fk, shared).catch(function () { return null; });
+      },
+
+      /* Claves bajo un sub-prefijo, ya sin el prefijo global.
+         keys("hist:") → ["hist:2026-08-01", ...]                            */
+      keys: function (sub) {
+        return driver.list(prefix + (sub || ""), shared).then(function (ks) {
+          return ks.map(function (k) { return k.slice(prefix.length); });
+        });
+      },
+
+      /* Trae todo un sub-árbol en un objeto. Útil para el historial.         */
+      getAll: function (sub) {
+        return API.keys(sub).then(function (ks) {
+          return Promise.all(ks.map(function (k) {
+            return API.get(k).then(function (v) { return [k, v]; });
+          }));
+        }).then(function (pares) {
+          var out = {};
+          pares.forEach(function (p) { out[p[0]] = p[1]; });
+          return out;
+        });
+      },
+
+      /* Lee-modifica-escribe atómico a nivel de esta pestaña. Evita el bug
+         clásico de dos paneles pisándose el mismo array.                     */
+      update: function (k, fn, fallback) {
+        return API.get(k, fallback).then(function (v) {
+          return API.set(k, fn(v));
+        });
+      },
+
+      /* Escribe varias claves de una. El storage es rate-limited, así que
+         conviene agrupar lo que cambia junto en una sola clave — pero cuando
+         de verdad son claves distintas, esto al menos las manda en paralelo. */
+      setMany: function (obj) {
+        return Promise.all(Object.keys(obj).map(function (k) {
+          return API.set(k, obj[k]);
+        }));
+      },
+
+      /* Suscripción para el indicador de "sincronizado" del header.          */
+      on: function (fn) {
+        oyentes.push(fn);
+        return function () { oyentes = oyentes.filter(function (o) { return o !== fn; }); };
+      },
+
+      /* Migraciones versionadas. Se corre una vez por versión y queda
+         registrado, así se puede cambiar el formato de los datos guardados
+         sin romperle la app a la cocina.                                     */
+      migrar: function (version, fn) {
+        return API.get("_schema", 0).then(function (v) {
+          if (v >= version) return false;
+          return Promise.resolve(fn(API)).then(function () {
+            return API.set("_schema", version);
+          }).then(function () { return true; });
+        });
+      },
+
+      /* Respaldo completo. Es la red de seguridad ante republicar el artifact,
+         que estrena storage vacío.                                           */
+      exportar: function () {
+        return API.getAll("").then(function (todo) {
+          return JSON.stringify({
+            app: "central-de-la-casa",
+            exportado: new Date().toISOString(),
+            datos: todo
+          }, null, 2);
+        });
+      },
+      importar: function (json) {
+        var d = typeof json === "string" ? JSON.parse(json) : json;
+        var datos = d && d.datos ? d.datos : d;
+        return API.setMany(datos).then(function () { return Object.keys(datos).length; });
+      },
+
+      _limpiarCache: function () { cache = Object.create(null); },
+      ready: function () { return API.get("_schema", 0).then(function () { return API; }); }
+    };
+
+    return API;
+  }
+
+  var Store = { create: create, driverMemoria: driverMemoria, sanitizarClave: sanitizarClave };
+
+  root.Store = Store;
+  if (typeof module !== "undefined" && module.exports) module.exports = Store;
+})(typeof globalThis !== "undefined" ? globalThis : this);
+
+/* ============================================================================
+   store-supabase.js · El driver que saca los datos de adentro de la app
+   ----------------------------------------------------------------------------
+   Esto es el pago del paso 6. store.js dejó una sola puerta al almacenamiento;
+   acá se cambia lo que hay al otro lado de la puerta y la app no se entera.
+   Ni un solo sget/sset del archivo principal cambia.
+
+   Tres cosas que el storage del artifact no podía dar:
+     · los datos sobreviven a publicar una versión nueva
+     · la tablet se entera sola cuando editas desde el teléfono (tiempo real)
+     · si se cae internet, la app sigue andando con lo último que vio
+
+   Uso:
+     const S = Store.create({ driver: await SupabaseDriver({ url, key, hogarId }) });
+   ========================================================================== */
+(function (root) {
+  "use strict";
+
+  var CACHE_LOCAL = "cc:cache:";     // espejo en el dispositivo, para modo avión
+
+  function leerLocal(k) {
+    try { var v = localStorage.getItem(CACHE_LOCAL + k); return v === null ? null : v; }
+    catch (e) { return null; }
+  }
+  function escribirLocal(k, v) {
+    try { v === null ? localStorage.removeItem(CACHE_LOCAL + k)
+                     : localStorage.setItem(CACHE_LOCAL + k, v); }
+    catch (e) { /* cuota llena: el espejo es un lujo, no puede voltear nada */ }
+  }
+
+  /* La llave y el hogar viajan en el fragmento del link (#...), que nunca sale
+     del dispositivo ni queda en el repositorio. Primera visita: se lee y se
+     guarda. De ahí en adelante el ícono entra solo.                          */
+  function credenciales() {
+    var f = (location.hash || "").replace(/^#/, "");
+    if (f) {
+      var p = new URLSearchParams(f), c = {
+        url: p.get("u"), key: p.get("k"), email: p.get("e"), pass: p.get("p")
+      };
+      if (c.url && c.key && c.email && c.pass) {
+        try { localStorage.setItem("cc:cred", JSON.stringify(c)); } catch (e) {}
+        history.replaceState(null, "", location.pathname + location.search);
+        return c;
+      }
+    }
+    try { return JSON.parse(localStorage.getItem("cc:cred") || "null"); }
+    catch (e) { return null; }
+  }
+
+  async function SupabaseDriver(opts) {
+    opts = opts || {};
+    var cred = opts.cred || credenciales();
+    if (!cred) throw new Error("SIN_CREDENCIALES");
+
+    var sb = root.supabase.createClient(cred.url, cred.key, {
+      auth: { persistSession: true, autoRefreshToken: true }
+    });
+
+    var ses = await sb.auth.getSession();
+    if (!ses.data.session) {
+      var r = await sb.auth.signInWithPassword({ email: cred.email, password: cred.pass });
+      if (r.error) throw new Error("LOGIN_FALLIDO: " + r.error.message);
+    }
+
+    var m = await sb.from("miembros").select("hogar_id").single();
+    if (m.error || !m.data) throw new Error("SIN_HOGAR");
+    var hogarId = m.data.hogar_id;
+
+    var enVivo = [];
+
+    /* Tiempo real: cualquier cambio en la base llega acá y se avisa hacia
+       arriba, para que la pantalla se redibuje sola.                        */
+    sb.channel("kv-" + hogarId)
+      .on("postgres_changes",
+          { event: "*", schema: "public", table: "kv", filter: "hogar_id=eq." + hogarId },
+          function (p) {
+            var fila = p.new || p.old;
+            if (!fila) return;
+            var val = p.eventType === "DELETE" ? null : JSON.stringify(fila.v);
+            escribirLocal(fila.k, val);
+            enVivo.forEach(function (fn) {
+              try { fn(fila.k, val, p.eventType); } catch (e) {}
+            });
+          })
+      .subscribe();
+
+    return {
+      nombre: "supabase",
+      disponible: true,
+      hogarId: hogarId,
+
+      /* Devuelve string, igual que el driver viejo: store.js se encarga del
+         JSON. Si la red falla, cae al espejo local en vez de morir.          */
+      get: async function (k) {
+        try {
+          var r = await sb.from("kv").select("v").eq("hogar_id", hogarId).eq("k", k).maybeSingle();
+          if (r.error) throw r.error;
+          var s = r.data ? JSON.stringify(r.data.v) : null;
+          escribirLocal(k, s);
+          return s;
+        } catch (e) { return leerLocal(k); }
+      },
+
+      set: async function (k, raw) {
+        var v; try { v = JSON.parse(raw); } catch (e) { v = raw; }
+        escribirLocal(k, raw);
+        var r = await sb.from("kv").upsert({ hogar_id: hogarId, k: k, v: v },
+                                           { onConflict: "hogar_id,k" });
+        if (r.error) throw r.error;
+        return { key: k, value: raw };
+      },
+
+      del: async function (k) {
+        escribirLocal(k, null);
+        var r = await sb.from("kv").delete().eq("hogar_id", hogarId).eq("k", k);
+        if (r.error) throw r.error;
+        return { key: k, deleted: true };
+      },
+
+      list: async function (prefijo) {
+        try {
+          var q = sb.from("kv").select("k").eq("hogar_id", hogarId);
+          if (prefijo) q = q.like("k", prefijo + "%");
+          var r = await q;
+          if (r.error) throw r.error;
+          return r.data.map(function (x) { return x.k; });
+        } catch (e) {
+          var out = [];
+          try {
+            for (var i = 0; i < localStorage.length; i++) {
+              var kk = localStorage.key(i);
+              if (kk && kk.indexOf(CACHE_LOCAL) === 0) {
+                var real = kk.slice(CACHE_LOCAL.length);
+                if (!prefijo || real.indexOf(prefijo) === 0) out.push(real);
+              }
+            }
+          } catch (e2) {}
+          return out;
+        }
+      },
+
+      /* El historial no pasa por kv: es append-only y con permisos propios. */
+      anotar: async function (tipo, actor, payload) {
+        var r = await sb.from("historial")
+          .insert({ hogar_id: hogarId, tipo: tipo, actor: actor, payload: payload });
+        if (r.error) throw r.error;
+        return true;
+      },
+
+      onCambio: function (fn) {
+        enVivo.push(fn);
+        return function () { enVivo = enVivo.filter(function (x) { return x !== fn; }); };
+      },
+
+      cerrarSesion: function () {
+        try { localStorage.removeItem("cc:cred"); } catch (e) {}
+        return sb.auth.signOut();
+      },
+
+      _sb: sb
+    };
+  }
+
+  root.SupabaseDriver = SupabaseDriver;
+  root.credencialesCC = credenciales;
+  if (typeof module !== "undefined" && module.exports) module.exports = SupabaseDriver;
+})(typeof globalThis !== "undefined" ? globalThis : this);
+</script>
+<script>/* ============================================================================
+   Control de la Casa · lógica
+   ----------------------------------------------------------------------------
+   Escribe en las MISMAS llaves que la cocina: menu:<semana>, recetario, falta.
+   Por eso un cambio acá aparece en la tablet sin que nadie recargue nada.
+   ========================================================================== */
+"use strict";
+
+const DIAS = ["Lunes","Martes","Miércoles","Jueves","Viernes","Sábado","Domingo"];
+let S = Store.create({ prefix:"", shared:true });
+let MODO = "local";
+let DRV = null;
+
+const estado = {
+  vista: "semana",
+  semana: null,
+  menu: [],
+  recetas: {},
+  falta: [],
+  sucio: false,          // hay cambios sin guardar
+  cargando: true
+};
+
+/* Misma convención de semana que la cocina: lunes como día 1. */
+function claveSemana(d){
+  d = d ? new Date(d) : new Date();
+  const dia = (d.getDay() + 6) % 7;
+  d.setDate(d.getDate() - dia);
+  return d.getFullYear() + "-W" + String(
+    Math.ceil(((d - new Date(d.getFullYear(),0,1)) / 86400000 + 1) / 7)
+  ).padStart(2,"0");
+}
+function lunesDe(){ const d=new Date(); d.setDate(d.getDate()-((d.getDay()+6)%7)); return d; }
+function fechaCorta(i){
+  const d = lunesDe(); d.setDate(d.getDate()+i);
+  return d.getDate() + " " + ["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic"][d.getMonth()];
+}
+const esc = s => String(s==null?"":s).replace(/[&<>"']/g, c =>
+  ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+/* ------------------------------------------------------------------ datos */
+async function cargar(){
+  estado.cargando = true; pintar();
+  estado.semana = claveSemana();
+  const base   = (await S.get("recetas:base", null)) || {};
+  const propias= (await S.get("recetario", null))    || {};
+  estado.recetas = Object.assign({}, base, propias);
+  const m = await S.get("menu:" + estado.semana, null);
+  estado.menu = (Array.isArray(m) && m.length === 7) ? m.slice() : new Array(7).fill(null);
+  estado.falta = (await S.get("falta", null)) || [];
+  estado.sucio = false;
+  estado.cargando = false;
+  pintar();
+}
+
+async function guardarMenu(){
+  await S.set("menu:" + estado.semana, estado.menu);
+  estado.sucio = false;
+  aviso("Menú guardado · la tablet ya lo tiene");
+  pintar();
+}
+
+async function guardarFalta(){
+  await S.set("falta", estado.falta);
+  pintar();
+}
+
+/* ----------------------------------------------------------------- pintar */
+function pintar(){
+  const app = document.getElementById("app");
+  if(estado.cargando){ app.innerHTML = '<div class="vacio">Cargando…</div>'; return; }
+  app.innerHTML = estado.vista === "semana" ? vistaSemana()
+                : estado.vista === "falta"  ? vistaFalta()
+                : vistaRecetas();
+  document.querySelectorAll(".tab").forEach(t =>
+    t.classList.toggle("on", t.dataset.vista === estado.vista));
+  const b = document.getElementById("barra-guardar");
+  b.classList.toggle("on", estado.sucio);
+  const n = document.getElementById("badge-falta");
+  n.textContent = estado.falta.length || "";
+  n.style.display = estado.falta.length ? "" : "none";
+}
+
+function vistaSemana(){
+  const hoy = (new Date().getDay() + 6) % 7;
+  return '<div class="lista">' + estado.menu.map((id,i) => {
+    const r = estado.recetas[id];
+    return '<div class="fila' + (i===hoy ? " hoy" : "") + '">'
+      + '<div class="dia"><b>' + DIAS[i] + '</b><span>' + fechaCorta(i) + '</span></div>'
+      + '<select data-idx="' + i + '" class="sel">'
+      + '<option value=""' + (id ? "" : " selected") + '>— sin definir —</option>'
+      + Object.keys(estado.recetas).map(k =>
+          '<option value="' + esc(k) + '"' + (k===id ? " selected" : "") + '>'
+          + esc(estado.recetas[k].name) + '</option>').join("")
+      + '</select>'
+      + (r && r.tanda ? '<span class="porc">' + r.tanda + ' porc.</span>' : "")
+      + '</div>';
+  }).join("") + '</div>'
+  + '<p class="nota">Cambia lo que quieras y guarda al final. La tablet se '
+  + 'actualiza sola, sin que nadie toque nada allá.</p>';
+}
+
+function vistaFalta(){
+  if(!estado.falta.length)
+    return '<div class="vacio">La casa no ha anotado nada.</div>' + campoFalta();
+  return '<div class="lista">' + estado.falta.map((f,i) =>
+      '<div class="fila"><div class="txt">' + esc(f.name || f.texto || f)
+      + (f.prodId ? '<span class="sub">' + esc(f.prodId) + '</span>' : "")
+      + '</div><button class="x" data-quitar="' + i + '">✕</button></div>').join("")
+    + '</div>' + campoFalta();
+}
+function campoFalta(){
+  return '<div class="agregar"><input id="nueva-falta" placeholder="Agregar algo que falta…" '
+       + 'autocomplete="off"><button data-add-falta>Agregar</button></div>';
+}
+
+function vistaRecetas(){
+  const ks = Object.keys(estado.recetas);
+  return '<div class="lista">' + ks.map(k => {
+      const r = estado.recetas[k];
+      return '<div class="fila"><div class="txt">' + esc(r.name)
+        + '<span class="sub">' + esc(r.cat || "sin categoría")
+        + (r.tanda ? " · " + r.tanda + " porc." : "") + '</span></div></div>';
+    }).join("") + '</div>'
+  + '<div class="agregar col">'
+  + '<input id="nr-nombre" placeholder="Nombre de la receta">'
+  + '<div class="par"><input id="nr-cat" placeholder="Categoría (legumbre, pescado…)">'
+  + '<input id="nr-tanda" type="number" inputmode="numeric" placeholder="Porciones"></div>'
+  + '<button data-add-receta>Agregar receta</button></div>'
+  + '<p class="nota">Las recetas nuevas quedan disponibles en la cocina de inmediato.</p>';
+}
+
+function aviso(t){
+  const e = document.getElementById("toast");
+  e.textContent = t; e.classList.add("on");
+  clearTimeout(aviso._t); aviso._t = setTimeout(() => e.classList.remove("on"), 2600);
+}
+
+/* --------------------------------------------------------------- eventos */
+document.addEventListener("change", e => {
+  const s = e.target.closest("select[data-idx]");
+  if(!s) return;
+  estado.menu[Number(s.dataset.idx)] = s.value || null;
+  estado.sucio = true;
+  pintar();
+});
+
+document.addEventListener("click", async e => {
+  const t = e.target.closest("[data-vista],[data-quitar],[data-add-falta],[data-add-receta],#guardar");
+  if(!t) return;
+
+  if(t.dataset.vista){ estado.vista = t.dataset.vista; return pintar(); }
+  if(t.id === "guardar") return guardarMenu();
+
+  if(t.dataset.quitar != null){
+    estado.falta.splice(Number(t.dataset.quitar), 1);
+    return guardarFalta();
+  }
+  if(t.hasAttribute("data-add-falta")){
+    const i = document.getElementById("nueva-falta");
+    const v = (i.value || "").trim();
+    if(!v) return;
+    estado.falta.push({ name: v, ts: Date.now(), por: "control" });
+    i.value = "";
+    return guardarFalta();
+  }
+  if(t.hasAttribute("data-add-receta")){
+    const n = document.getElementById("nr-nombre").value.trim();
+    if(!n) return aviso("Falta el nombre");
+    const id = n.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"")
+                .replace(/[^a-z0-9]+/g,"_").replace(/^_|_$/g,"").slice(0,28);
+    if(estado.recetas[id]) return aviso("Ya existe una receta con ese nombre");
+    const r = { name:n,
+                cat: document.getElementById("nr-cat").value.trim() || null,
+                tanda: Number(document.getElementById("nr-tanda").value) || 8 };
+    const propias = (await S.get("recetario", null)) || {};
+    propias[id] = r;
+    await S.set("recetario", propias);
+    estado.recetas[id] = r;
+    ["nr-nombre","nr-cat","nr-tanda"].forEach(x => document.getElementById(x).value = "");
+    aviso("Receta agregada");
+    pintar();
+  }
+});
+
+/* --------------------------------------------------------------- arranque */
+function marcarEstado(){
+  const e = document.getElementById("estado");
+  e.textContent = MODO === "nube" ? "● sincronizado" : "○ sin conexión";
+  e.className = MODO === "nube" ? "ok" : "mal";
+}
+
+async function iniciarAlmacenamiento(){
+  if(!globalThis.supabase || !globalThis.SupabaseDriver){
+    MODO = "local"; marcarEstado();
+    return pedirLlave("No se pudo cargar la librería de la base. ¿Hay internet?");
+  }
+  try{
+    DRV = await SupabaseDriver({});
+    S = Store.create({ driver: DRV, prefix:"" });
+    MODO = "nube"; marcarEstado();
+    /* Si la casa anota algo en la tablet mientras esto está abierto, aparece
+       acá solo. Salvo que haya edición sin guardar: pisarla sería peor. */
+    DRV.onCambio(() => { S._limpiarCache(); if(!estado.sucio) cargar(); });
+  }catch(err){
+    MODO = "local"; marcarEstado();
+    pedirLlave(String(err.message||err).indexOf("SIN_CREDENCIALES") >= 0
+      ? "" : "No se pudo entrar: " + (err.message || err));
+  }
+}
+
+function pedirLlave(error){
+  if(document.getElementById("llave")) return;
+  const d = document.createElement("div");
+  d.id = "llave";
+  d.innerHTML =
+    '<div class="lv-caja"><div class="lv-t">CONTROL DE LA CASA</div><div class="lv-ln"></div>'
+  + '<p>Este dispositivo todavía no está conectado.<br>Pega el link de la casa.</p>'
+  + '<textarea id="lv-txt" rows="4" placeholder="https://…"></textarea>'
+  + '<div id="lv-err">' + (error||"") + '</div>'
+  + '<button id="lv-ok">Conectar</button>'
+  + '<small>Se pide una sola vez por dispositivo.</small></div>';
+  document.body.appendChild(d);
+  d.querySelector("#lv-ok").addEventListener("click", async () => {
+    const txt = (d.querySelector("#lv-txt").value||"").trim();
+    const err = d.querySelector("#lv-err");
+    const i = txt.indexOf("#");
+    if(i < 0) return err.textContent = "Ese link no trae la llave (le falta el # y lo que sigue).";
+    const q = new URLSearchParams(txt.slice(i+1));
+    const c = { url:q.get("u"), key:q.get("k"), email:q.get("e"), pass:q.get("p") };
+    if(!c.url || !c.key || !c.email || !c.pass)
+      return err.textContent = "Al link le falta alguno de los cuatro datos.";
+    err.textContent = "Conectando…";
+    try{
+      localStorage.setItem("cc:cred", JSON.stringify(c));
+      await iniciarAlmacenamiento();
+      if(MODO !== "nube") throw new Error("no se pudo entrar");
+      d.remove(); await cargar();
+    }catch(e2){
+      try{ localStorage.removeItem("cc:cred"); }catch(e3){}
+      err.textContent = "No se pudo conectar. Revisa correo y contraseña.";
+    }
+  });
+}
+
+iniciarAlmacenamiento().then(cargar);
+if("serviceWorker" in navigator) navigator.serviceWorker.register("../sw.js",{scope:"../"}).catch(()=>{});
+</script>
+</body>
+</html>
