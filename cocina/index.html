@@ -836,6 +836,45 @@ input,textarea{-webkit-user-select:text;user-select:text}
 }
 
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+/* ---- v2.4 ---- */
+.cl-col{display:flex;flex-direction:column;align-items:center;gap:4px}
+.pw-pill{font-family:"Space Mono",monospace;font-size:.62rem;letter-spacing:.16em;
+  background:#efe9f6;border:1px solid #d6c9e6;color:#6d4a8c;border-radius:999px;
+  padding:3px 14px;cursor:pointer;white-space:nowrap}
+.pw-pill:active{opacity:.6}
+.pw-box{margin:8px 22px 0;background:#f2eef8;border-left:3px solid #6d4a8c;
+  padding:8px 13px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:.82rem}
+.pw-box b{font-size:1rem;font-weight:800}
+.pw-chip{font-family:"Space Mono",monospace;font-size:.62rem;background:#fff;
+  color:#6d4a8c;border-radius:999px;padding:2px 9px}
+.pw-def{color:var(--ink-soft);font-size:.78rem}
+.polo-linea{display:flex;align-items:center;gap:9px;flex-wrap:wrap;
+  font-family:"Space Mono",monospace;font-size:.66rem;color:var(--ink-soft);
+  margin:10px 4px 0}
+.pl-t{letter-spacing:.12em;color:#27458C}
+.pl-item{color:var(--ink)} .pl-item b{font-weight:700}
+.pl-hoy{background:#F0A834;color:#412402;border-radius:4px;padding:0 5px;font-weight:700}
+.pl-dot{color:var(--line-strong)} .pl-vacio{color:var(--ink-soft)}
+.medgrid{display:grid;grid-template-columns:minmax(132px,1.15fr) repeat(6,minmax(0,1fr));
+  gap:5px;align-items:center;margin-top:4px}
+.mhora{text-align:center;font-family:"Space Mono",monospace;font-size:.56rem;
+  color:var(--ink-soft);line-height:1.35}
+.mrow-label{display:flex;align-items:center;gap:7px;min-width:0}
+.mnom{font-weight:800;font-size:.76rem;line-height:1.25;display:flex;flex-direction:column;min-width:0}
+.mdet{font-weight:400;font-size:.64rem;color:var(--ink-soft)}
+.mcell{min-height:46px;border-radius:8px;border:1.5px solid var(--line);background:#fff;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  font-size:1.05rem;color:#c9c4b8;cursor:pointer;padding:2px}
+.mcell.off{background:#f6f3ec;border:0;cursor:default}
+.mcell.activa{border-color:#F0A834}
+.mcell.dada{border-color:var(--ok)}
+.mck{color:var(--ok);font-size:1.05rem;line-height:1}
+.mquien{font-family:"Space Mono",monospace;font-size:.5rem;color:var(--ink-soft);
+  letter-spacing:.03em;margin-top:2px;text-transform:uppercase}
+.medpick{margin-top:10px;background:#FAF7F0;border:1px solid var(--line);border-radius:10px;
+  padding:9px 12px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:.8rem}
+@media (min-width:1180px){ html{font-size:17px} }
 </style>
 </head>
 <body>
@@ -851,7 +890,10 @@ input,textarea{-webkit-user-select:text;user-select:text}
     </div>
   </div>
   <div class="head-right">
-    <button class="cl-strip" id="clima" data-action="clima-actualizar" title="Tocar para actualizar"></button>
+    <div class="cl-col">
+      <button class="cl-strip" id="clima" data-action="clima-actualizar" title="Tocar para actualizar"></button>
+      <button class="pw-pill" id="pw-pill" data-action="pw-toggle" title="Tocar para ver el significado"></button>
+    </div>
     <div class="clock">
       <div class="t" id="ct">--:--</div>
       <div class="d" id="cd"></div>
@@ -866,6 +908,8 @@ input,textarea{-webkit-user-select:text;user-select:text}
   <button class="tab" data-view="ranking">Ranking</button>
   <button class="tab" data-view="historial">Historial</button>
 </nav>
+
+<div class="pw-box" id="pw-box" hidden></div>
 
 <main id="main"></main>
 
@@ -1361,6 +1405,13 @@ input,textarea{-webkit-user-select:text;user-select:text}
 
 </script>
 <script>
+if(location.protocol === "file:"){
+  document.addEventListener("DOMContentLoaded", () => {
+    document.body.innerHTML = '<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#FAF7F0;color:#1C2026;font-family:system-ui;text-align:center;padding:30px"><div style="max-width:440px"><div style="font-weight:800;font-size:1.3rem">Este archivo no es la app</div><div style="width:60px;height:5px;background:#F0A834;border-radius:3px;margin:14px auto 18px"></div><p style="line-height:1.6;font-size:.95rem">Este archivo es para <b>subirlo a GitHub</b>. La app vive siempre en:</p><p><a href="https://benjaira.github.io/central-casa/cocina/" style="color:#4a6d8c;font-weight:700;word-break:break-all">benjaira.github.io/central-casa/cocina/</a></p><p style="font-size:.82rem;color:#8a8578;line-height:1.5">Abierto desde el disco no puede sincronizar ni actualizarse.</p></div></div>';
+  });
+  throw new Error("file:// — este archivo se sube, no se abre");
+}
+
 /* =====================================================================
    CENTRAL DE LA CASA · v3
    - Menú semanal según pauta nutricional de Julián (25-jun-2026):
@@ -1514,7 +1565,9 @@ const diasEntre = (a,b)=>Math.round((new Date(b)-new Date(a))/86400000);
 /* ================= ESTADO ================= */
 const state = {
   view:"semana",
-  meds:{},            // {tratamientoId: nDosisDadasHoy}
+  meds:{},            // {tratamientoId: nDosisDadasHoy} — se mantiene por compatibilidad
+  meds2:{},           // {"tratId|HH:MM": {por, t}} — quién dio cada dosis y a qué hora
+  medPick:null,       // dosis esperando que se responda quién la dio
   falta:[],           // [{name,got}]
   shopGot:{},         // {itemName:true} — de esta semana
   events:{},          // {fecha:[{time,text}]} — anotados a mano, toda la semana
@@ -1632,7 +1685,7 @@ S.on(e => { if(e.tipo === "sync" || e.tipo === "error") setSync(S.estado.conecta
 function setSync(ok){
   state.synced = ok;
   const el = document.getElementById("sync");
-  if(el) el.innerHTML = ok ? "<b>\u25cf</b> sincronizado" : "\u25cb local";
+  if(el) el.innerHTML = (ok ? "<b>\u25cf</b> sincronizado" : "\u25cb local") + " \u00b7 v2.4";
 }
 
 /* Respaldo. El storage es por artifact: al republicar, la URL nueva parte
@@ -2541,11 +2594,12 @@ $("#week-label").textContent = "Semana del " + monday.toLocaleDateString("es-CL"
 
 /* ================= CARGA COMPARTIDA ================= */
 async function loadShared(){
-  const [m,f,s,e,ra,rv,nv,ag] = await Promise.all([
-    sget("meds:"+TODAY_KEY), sget("falta"), sget("shopgot:"+WEEK_KEY), cargarEventosSemana(),
+  const [m,m2,f,s,e,ra,rv,nv,ag] = await Promise.all([
+    sget("meds:"+TODAY_KEY), sget("meds2:"+TODAY_KEY), sget("falta"), sget("shopgot:"+WEEK_KEY), cargarEventosSemana(),
     sget("rate:agg"), sget("rate:veto"), sget("polo"), sget("agenda:"+WEEK_KEY)
   ]);
   if(m) state.meds = m;
+  if(m2) state.meds2 = m2;
   if(f) state.falta = f;
   if(s) state.shopGot = s;
   state.events = e || {};
@@ -2710,7 +2764,7 @@ async function sembrarAgenda(){
 /* ================= RENDER ================= */
 function render(){
   document.querySelectorAll(".tab").forEach(t=>t.classList.toggle("active",t.dataset.view===state.view));
-  $("#shop-count").textContent=shopCount();
+  $("#shop-count").textContent = shopCount() + state.falta.filter(i=>!i.got).length;
   pintarClima();
   if(state.view==="semana")    return renderSemana();
   if(state.view==="compras")   return renderCompras();
@@ -2719,7 +2773,45 @@ function render(){
   if(state.view==="historial") return renderHistorial();
 }
 
-/* ---- Fila de tratamiento con contador de dosis ---- */
+/* ---- Remedios v2.4: grilla por horario, con quién dio cada dosis ----
+   Cada tratamiento programado es una fila; las columnas son las anclas del
+   día. Marcar pregunta QUIÉN (Josefa, Maxi o Benja): resuelve el toque
+   accidental y deja el registro que un pediatra pregunta — quién, qué, hora.
+   Los "si hace falta" (SOS) conservan su contador de siempre, más abajo. */
+const ANCLAS_MED = [["08:00","desayuno"],["10:30","m. mañana"],["13:00","almuerzo"],["16:30","m. tarde"],["19:30","cena"],["20:30","dormir"]];
+const CUIDADORES = ["Josefa","Maxi","Benja"];
+
+/* A falta de esquema explícito en la receta, las N dosis diarias se reparten
+   en horarios razonables. Cuando la receta suba con esquema propio (t.slots),
+   ese manda. */
+function slotsDe(t){
+  if(Array.isArray(t.slots) && t.slots.length) return t.slots;
+  const n = dosisPorDia(t.frecuencia) || 1;
+  return n>=4 ? ["08:00","13:00","16:30","20:30"]
+       : n===3 ? ["08:00","13:00","20:30"]
+       : n===2 ? ["08:00","20:30"] : ["08:00"];
+}
+
+function celdaMed(t, slot){
+  const marca = (state.meds2||{})[t.id+"|"+slot];
+  if(marca) return `<button class="mcell dada" data-action="dose-off" data-id="${t.id}" data-slot="${slot}">
+      <span class="mck">\u2713</span><span class="mquien">${esc(marca.por)} ${esc(marca.t||"")}</span></button>`;
+  const H = new Date().getHours()+new Date().getMinutes()/60;
+  const sh = Number(slot.slice(0,2))+Number(slot.slice(3))/60;
+  const activa = Math.abs(sh-H) <= 1.5;
+  return `<button class="mcell ${activa?"activa":""}" data-action="dose-slot" data-id="${t.id}" data-slot="${slot}">\u25cb</button>`;
+}
+
+function filaMed(t){
+  const slots = slotsDe(t);
+  const kid = t.ninoId || "J";
+  const quedan = t.fin ? diasEntre(TODAY_KEY, t.fin) : null;
+  const cola = (quedan!==null && quedan<=2) ? ` · <b style="color:var(--due)">${quedan===0?"último día":"quedan "+quedan+" días"}</b>` : (!t.fin?" · permanente":"");
+  return `<div class="mrow-label"><span class="kdot ${kid}"></span><span class="mnom">${esc(t.nombreComercial||t.principioActivo)}<span class="mdet">${esc(t.dosis||"")}${cola}</span></span></div>`
+    + ANCLAS_MED.map(([a])=> slots.includes(a) ? celdaMed(t,a) : `<div class="mcell off"></div>`).join("");
+}
+
+/* ---- Fila de tratamiento con contador de dosis (queda para los SOS) ---- */
 function tratRow(t){
   const dadas = state.meds[t.id] || 0;
   const max = dosisPorDia(t.frecuencia);
@@ -2760,6 +2852,27 @@ function tratRowFin(t){
 }
 
 function panelRemedios(){
+  const prog = state.vigentes.filter(t=>!t.sos);
+  const sos  = state.vigentes.filter(t=>t.sos);
+  if(prog.length || sos.length){
+    const grilla = prog.length ? `<div class="medgrid">
+        <div></div>${ANCLAS_MED.map(([a,l])=>`<div class="mhora">${l}<br>${a}</div>`).join("")}
+        ${prog.map(filaMed).join("")}
+      </div>` : "";
+    const pick = state.medPick ? `<div class="medpick">¿Quién dio <b>${esc((state.vigentes.find(t=>t.id===state.medPick.id)||{}).nombreComercial||"la dosis")}</b> de las ${esc(state.medPick.slot)}?
+        ${CUIDADORES.map(q=>`<button data-action="dose-who" data-q="${q}">${q}</button>`).join("")}
+        <button data-action="dose-cancel" class="soft">cancelar</button></div>` : "";
+    const sosHtml = sos.length ? `<div class="tsec">Si hace falta</div>` + sos.map(tratRow).join("") : "";
+    return grilla + pick + sosHtml + panelRemediosResto();
+  }
+  return panelRemediosViejo();
+}
+
+function panelRemediosViejo(){
+  return panelRemediosResto();
+}
+
+function panelRemediosResto(){
   const fin = state.verTerminados && state.terminados.length
     ? `<div class="tsec">Terminados</div>` + state.terminados.map(tratRowFin).join("")
     : "";
@@ -2823,95 +2936,68 @@ function badgeRate(id){
 }
 
 /* ---- El Polo Norte: qué hay cocinado y hasta cuándo sirve ---- */
-function panelPolo(){
-  const vig  = POLO.vigentes(TODAY_KEY);
-  const venc = POLO.vencidas(TODAY_KEY);
-  const vari = POLO.variedad(TODAY_KEY);
-  const prox = POLO.proximoAVencer(TODAY_KEY);
-
-  let out = "";
-  if(venc.length){
-    out += `<div class="warnbox">⚠️ <b>Fuera de fecha:</b> ${venc.map(b=>esc(b.titulo)).join(", ")}. No se ofrecen para el ${COMIDA.cena}.</div>`;
-  }
-  /* Lo que vence primero va arriba y con nombre: nadie tiene que adivinarlo. */
-  if(prox){
-    const d = diasEntre(TODAY_KEY, prox.vence);
-    out += `<div class="tanda" style="margin-top:0"><b>Lo próximo en gastarse:</b> ${esc(prox.titulo)} — ${d<=0?"hoy":d===1?"mañana":"en "+d+" días"}.</div>`;
-  }
-  if(!vig.length){
-    out += `<div class="empty"><b>El Polo Norte está vacío.</b> El ${COMIDA.cena} sale de lo que se cocinó días antes. En cuanto se registre la primera tanda aparece acá.</div>`;
-  } else {
-    out += vig.map(b=>{
-      const dias = diasEntre(TODAY_KEY, b.vence);
-      const urge = dias <= 1;
-      const cls = b.congelado ? "frio" : (urge ? "urge" : "");
-      const cuando = b.congelado ? "❄ congelado" : (dias<=0 ? "vence hoy" : dias===1 ? "vence mañana" : dias+" días");
-      return `<div class="nv ${cls}">
-        <span class="ni">
-          <span class="nn">${esc(b.titulo)}</span>
-          <span class="nd">${esc(b.cocinado)} · ${esc(cuando)}</span>
-        </span>
-        <span class="np">${b.restantes}</span>
-        <button class="nvbtn" data-action="nev-servir" data-id="${b.id}">Servir</button>
-        ${b.congelado?"":`<button class="nvbtn" data-action="nev-congelar" data-id="${b.id}">Congelar</button>`}
-      </div>`;
-    }).join("");
-  }
-
-  const nota = vari >= 3
-    ? `<b>${vari} platos distintos</b> — alcanza para no repetir.`
-    : `Sólo ${vari} plato(s) distinto(s). Con 3-4 días cocinando una vez al día sobra repertorio.`;
-
-  return `<section class="panel">
-    <h2>El Polo Norte <span class="soft">${vig.reduce((a,b)=>a+b.restantes,0)} porciones</span></h2>
-    ${out}
-    <div class="hint">${nota}</div>
-  </section>`;
+/* El Polo Norte ya no es un panel: es UNA línea bajo el rail de días,
+   ordenada por vencimiento de izquierda a derecha. Lo urgente primero, y lo
+   que vence hoy con su etiqueta ámbar. El detalle completo sigue viviendo en
+   el Ritual; esta línea es la visibilidad diaria. */
+function lineaPolo(){
+  const vig = POLO.vigentes(TODAY_KEY);
+  if(!vig.length) return `<div class="polo-linea"><span class="pl-t">\u2744 POLO NORTE</span><span class="pl-vacio">vacío — en cuanto se cocine la primera tanda aparece acá</span></div>`;
+  const items = vig.slice().sort((a,b)=>String(a.vence).localeCompare(String(b.vence)))
+    .map(b=>{
+      const d = diasEntre(TODAY_KEY, b.vence);
+      const v = d<=0 ? `<span class="pl-hoy">HOY</span>` : d===1 ? "mañana" : DIAS[new Date(b.vence+"T12:00:00").getDay()===0?6:new Date(b.vence+"T12:00:00").getDay()-1].toLowerCase();
+      return `<span class="pl-item">${esc(b.titulo.length>22?b.titulo.slice(0,21)+"…":b.titulo)} <b>${b.restantes}</b> ${v}</span>`;
+    }).join(`<span class="pl-dot">·</span>`);
+  return `<div class="polo-linea"><span class="pl-t">\u2744 POLO NORTE</span>${items}</div>`;
 }
 
 /* ---- Clima: ventana rodante de 5 tramos -----------------------------
    Siempre se ven 5. La ventana en curso se mantiene; las que ya pasaron
    se reemplazan por las de mañana, y una línea marca dónde cambia el día.
    A las 15:55: 14 (en curso) · 17 · 20 │ 08 · 11 de mañana.            */
-function ventanasVisibles(){
-  const hoy = (state.clima && state.clima.hoy) || null;
-  if(!hoy) return null;
-  const H = new Date().getHours();
-  let cur = 0;
-  VENTANAS.forEach((v,i)=>{ if(Number(v) <= H) cur = i; });
-  if(H < Number(VENTANAS[0])) cur = 0;          // antes de las 8 va el día entero
-  const deHoy = hoy.slice(cur);
-  const faltan = 5 - deHoy.length;
-  const man = (state.clima.manana || []).slice(0, Math.max(0,faltan));
-  return { hoy:deHoy, manana:man };
-}
-
+/* Clima de horas FIJAS: las columnas 08·11·14·17·20 nunca se mueven de
+   lugar. Lo que cambia es qué muestran: una hora ya pasada se atenúa y pasa
+   a mostrar el pronóstico de MAÑANA para esa misma hora. Antes las casillas
+   se desplazaban y a la noche el 20 aparecía a la izquierda — se veía raro
+   porque el ojo memoriza posiciones, no etiquetas. */
 function pintarClima(){
   const el = document.getElementById("clima");
   if(!el) return;
-  const v = ventanasVisibles();
-  if(!v){ el.innerHTML=""; return; }
+  const hoy = (state.clima && state.clima.hoy) || null;
+  if(!hoy){ el.innerHTML=""; return; }
+  const man = (state.clima && state.clima.manana) || [];
+  const H = new Date().getHours();
+  const dato = (lista,hh) => lista.find(x=>String(x.h).padStart(2,"0")===hh) || {h:hh,icon:null,t:null};
   const casilla = (x,cls) => `<div class="cl-v ${cls||""} ${x.aprox?"cl-ap":""}">
-      <div class="cl-h">${esc(x.h)}</div>
+      <div class="cl-h">${esc(String(x.h).padStart(2,"0"))}</div>
       <div class="cl-i">${iconoSVG(x.icon)}</div>
       <div class="cl-t">${x.t!=null?esc(String(Math.round(x.t)))+"°":"–"}</div>
     </div>`;
-  el.innerHTML =
-      v.hoy.map((x,i)=>casilla(x, i===0?"ahora":"")).join("")
-    + (v.manana.length ? `<div class="cl-sep"><span>mañana</span></div>` : "")
-    + v.manana.map(x=>casilla(x,"man")).join("");
+  let html = "", sepPuesto = false;
+  VENTANAS.forEach(v=>{
+    const hh = String(v).padStart(2,"0");
+    const pasada = H >= Number(v)+1;          // una hora después, ya es de mañana
+    if(pasada && !sepPuesto){ html += `<div class="cl-sep"><span>mañana</span></div>`; sepPuesto = true; }
+    html += casilla(dato(pasada?man:hoy, hh), pasada?"man":"");
+  });
+  el.innerHTML = html;
 }
 
-/* ---- Palabra del día · para Domingo ---- */
-function panelPalabra(){
+/* ---- Palabra del día · ahora vive en el header, bajo el clima ----
+   Sólo la palabra a la vista; el toque abre sinónimos y significado.
+   Salió del rail para devolverle ese espacio a los remedios. */
+function pintarPalabra(){
   const w = palabraDelDia(TODAY_KEY);
-  if(!w) return "";
-  return `<section class="panel">
-    <h2>Palabra del día <span class="soft">de la casa</span></h2>
-    <div class="pw">${esc(w.p)}</div>
-    <div class="pw-s">${w.s.map(x=>`<span>${esc(x)}</span>`).join("")}</div>
-    <div class="pw-d">${esc(w.d)}</div>
-  </section>`;
+  const pill = document.getElementById("pw-pill");
+  const box  = document.getElementById("pw-box");
+  if(!pill || !box) return;
+  if(!w){ pill.hidden = true; box.hidden = true; return; }
+  pill.hidden = false;
+  pill.innerHTML = `\u2726 ${esc(w.p.toUpperCase())}`;
+  box.innerHTML = `<b>${esc(w.p)}</b>`
+    + w.s.map(x=>`<span class="pw-chip">${esc(x)}</span>`).join("")
+    + `<span class="pw-def">${esc(w.d)}</span>`;
 }
 
 
@@ -3159,38 +3245,15 @@ function renderSemana(){
 
   main.innerHTML=`<div class="board-wrap">
     <div class="board" id="board">${cols}</div>
-    <aside class="rail">
-      <section class="panel">
+    ${lineaPolo()}
+    <aside class="rail rail-ancha">
+      <section class="panel" style="grid-column:1/-1">
         <h2>Remedios · hoy ${totalDosis?`<span class="soft">${dadasHoy}/${totalDosis} dosis</span>`:""}</h2>
         ${panelRemedios()}
       </section>
-      ${panelPalabra()}
-      ${panelPolo()}
-      <section class="panel">
-        <h2>Falta en la casa ${state.falta.filter(i=>!i.got).length?`<span class="soft">${state.falta.filter(i=>!i.got).length}</span>`:""}</h2>
-        <div class="falta-row">
-          <input id="falta-input" type="text" placeholder="Ej: aceite de oliva…" autocomplete="off">
-          <button data-action="add-falta-input">Anotar</button>
-        </div>
-        <div class="falta-chips">
-          ${["Pan","Fruta","Paños","Pañales","Detergente"].map(c=>`<button class="fchip" data-action="add-falta" data-name="${c}">＋ ${c}</button>`).join("")}
-        </div>
-        ${state.falta.filter(i=>!i.got).length ? `<div class="faltalist">${
-          state.falta.map((i,x)=>({i,x})).filter(o=>!o.i.got).map(({i,x})=>{
-            const p = prodDe(i);
-            return `<div class="frow">
-              <button class="fdel" data-action="del-falta" data-idx="${x}" aria-label="quitar">✕</button>
-              <span class="fi">
-                <span class="fn">${esc(i.name)}</span>
-                ${p ? `<span class="fp">${esc(p.n)} · ${precioTxt(p)}</span>`
-                    : `<span class="fp libre">sin producto habitual — se pide como está escrito</span>`}
-              </span>
-            </div>`;
-          }).join("")}</div>` : ""}
-        <div class="hint">Lo que anotes se traduce solo al producto que compran habitualmente. Todo entra a la lista de Compras.</div>
-      </section>
     </aside>
   </div>`;
+  pintarPalabra();
 
   const colHoy=document.getElementById("col-hoy");
   if(colHoy&&window.innerWidth<900) colHoy.scrollIntoView({inline:"center",block:"nearest"});
@@ -3303,6 +3366,35 @@ function renderRanking(){
     <div class="panel">${body}</div>`;
 }
 
+/* "Falta en la casa" vive ahora en Compras: liberó el rail para que los
+   remedios respiraran, y acá queda al lado de la lista donde termina todo
+   lo que se anota. El botón flotante de la esquina trae directo a esta caja. */
+function bloqueFalta(){
+  return `<section class="panel" style="margin-bottom:14px">
+        <h2>Falta en la casa ${state.falta.filter(i=>!i.got).length?`<span class="soft">${state.falta.filter(i=>!i.got).length}</span>`:""}</h2>
+        <div class="falta-row">
+          <input id="falta-input" type="text" placeholder="Ej: aceite de oliva…" autocomplete="off">
+          <button data-action="add-falta-input">Anotar</button>
+        </div>
+        <div class="falta-chips">
+          ${["Pan","Fruta","Paños","Pañales","Detergente"].map(c=>`<button class="fchip" data-action="add-falta" data-name="${c}">＋ ${c}</button>`).join("")}
+        </div>
+        ${state.falta.filter(i=>!i.got).length ? `<div class="faltalist">${
+          state.falta.map((i,x)=>({i,x})).filter(o=>!o.i.got).map(({i,x})=>{
+            const p = prodDe(i);
+            return `<div class="frow">
+              <button class="fdel" data-action="del-falta" data-idx="${x}" aria-label="quitar">✕</button>
+              <span class="fi">
+                <span class="fn">${esc(i.name)}</span>
+                ${p ? `<span class="fp">${esc(p.n)} · ${precioTxt(p)}</span>`
+                    : `<span class="fp libre">sin producto habitual — se pide como está escrito</span>`}
+              </span>
+            </div>`;
+          }).join("")}</div>` : ""}
+        <div class="hint">Lo que anotes se traduce solo al producto que compran habitualmente y entra a esta lista de compras.</div>
+      </section>`;
+}
+
 function renderCompras(){
   const baseRows = PEDIDO_BASE.map(([n,q])=>{
     const got=!!state.shopGot[n];
@@ -3331,7 +3423,7 @@ function renderCompras(){
     ? `≈ $${est.total.toLocaleString("es-CL")} en lo anotado por la casa${est.desconocidos?` · ${est.desconocidos} sin precio conocido`:""}`
     : "";
 
-  main.innerHTML=`<div class="shop">
+  main.innerHTML=`${bloqueFalta()}<div class="shop">
     <div class="shop-top">
       <span class="big">${shopCount()} por comprar</span>
       <span class="note">Lista consolidada del menú semanal según la pauta de Julián (sin sal agregada, sin margarina, sin caldos ni procesados) + lo anotado por la casa, ya traducido a los productos y marcas que ustedes compran.${estTxt?`<br><b>${estTxt}</b>`:""}</span>
@@ -3694,6 +3786,45 @@ document.addEventListener("click",async e=>{
   if(a==="dose-plus")  return cambiarDosis(el.dataset.id, +1);
   if(a==="dose-minus") return cambiarDosis(el.dataset.id, -1);
 
+  if(a==="pw-toggle"){
+    const b = document.getElementById("pw-box");
+    if(b) b.hidden = !b.hidden;
+    return;
+  }
+  /* Marcar una dosis es un acto de dos pasos a propósito: la casilla abre la
+     pregunta de quién, y sólo la respuesta marca. Un toque accidental no
+     registra nada. */
+  if(a==="dose-slot"){
+    state.medPick = { id: el.dataset.id, slot: el.dataset.slot };
+    return render();
+  }
+  if(a==="dose-cancel"){ state.medPick = null; return render(); }
+  if(a==="dose-who"){
+    if(!state.medPick) return;
+    const k = state.medPick.id + "|" + state.medPick.slot;
+    const hora = new Date().toLocaleTimeString("es-CL",{hour:"2-digit",minute:"2-digit"});
+    state.meds2[k] = { por: el.dataset.q, t: hora };
+    state.meds[state.medPick.id] = (state.meds[state.medPick.id]||0) + 1;
+    state.medPick = null;
+    sset("meds2:"+TODAY_KEY, state.meds2);
+    sset("meds:"+TODAY_KEY, state.meds);
+    sset("hist:_ultimoDia", {fecha:TODAY_KEY, dosis:state.meds});
+    showToast("Dosis registrada — " + el.dataset.q + ", " + hora);
+    return render();
+  }
+  if(a==="dose-off"){
+    const k = el.dataset.id + "|" + el.dataset.slot;
+    const marca = state.meds2[k];
+    if(!marca) return;
+    if(!confirm("¿Desmarcar esta dosis?\nQuedó registrada por " + marca.por + " a las " + (marca.t||"—") + ".")) return;
+    delete state.meds2[k];
+    state.meds[el.dataset.id] = Math.max(0,(state.meds[el.dataset.id]||0) - 1);
+    sset("meds2:"+TODAY_KEY, state.meds2);
+    sset("meds:"+TODAY_KEY, state.meds);
+    sset("hist:_ultimoDia", {fecha:TODAY_KEY, dosis:state.meds});
+    return render();
+  }
+
   if(a==="rate-star")  return valorar(el.dataset.id, el.dataset.val);
   if(a==="rate-quien") return valorarQuien(el.dataset.id, el.dataset.quien);
   if(a==="rate-veto"){
@@ -3827,8 +3958,9 @@ document.addEventListener("click",async e=>{
     render(); if(overlay.classList.contains("open")) openDia(f);
   }
   if(a==="focus-falta"){
-    if(state.view!=="semana"){state.view="semana";render();}
-    setTimeout(()=>{const i=$("#falta-input");i&&i.scrollIntoView({behavior:"smooth",block:"center"});i&&i.focus();},100);
+    if(state.view!=="compras"){ state.view="compras"; render(); }
+    setTimeout(()=>{ const inp=document.getElementById("falta-input"); if(inp){ inp.focus(); inp.scrollIntoView({block:"center"}); } }, 60);
+    return;
   }
   if(a==="hist-tipo"){ state.histFiltro = el.dataset.val || null; render(); }
   if(a==="hist-open"){ openHist(el.dataset.tipo, el.dataset.id); }
