@@ -875,6 +875,36 @@ input,textarea{-webkit-user-select:text;user-select:text}
 .medpick{margin-top:10px;background:#FAF7F0;border:1px solid var(--line);border-radius:10px;
   padding:9px 12px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:.8rem}
 @media (min-width:1180px){ html{font-size:17px} }
+
+/* ---- v2.5 ---- */
+.pw-head{border-left:1px solid var(--line-strong);padding-left:16px;margin-left:6px;
+  max-width:250px;display:flex;flex-direction:column;gap:2px}
+.pwh-k{font-family:"Space Mono",monospace;font-size:.56rem;letter-spacing:.16em;
+  color:#6d4a8c;text-transform:uppercase}
+.pw-head .pw{font-size:1.25rem}
+.pw-head .pw-s{margin-top:4px}
+.pw-head .pw-d{margin-top:4px;font-size:.72rem;line-height:1.35}
+.col-rate,.col-meal{height:118px;overflow:hidden;padding:12px 14px 4px;box-sizing:border-box}
+.col-rate .mname,.col-meal .mname{display:block;height:2.55em;overflow:hidden;margin:3px 0 4px}
+.col-rate.rating{height:auto;max-height:none}
+.banq{padding:7px 11px}
+.banq .bn{display:block;height:2.6em;overflow:hidden;margin-top:2px}
+.banq .bd{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.col-evts{margin-top:8px}
+.evt-mas.plus{color:#8A6410;background:var(--hoy-soft);font-weight:800;
+  border-radius:5px;padding:1px 7px;display:inline-block;margin-top:3px}
+.ev-lab{font-family:"Space Mono",monospace;font-size:.54rem;letter-spacing:.16em;
+  color:var(--ink-soft);padding:7px 14px 0;display:block}
+.col.sat .col-evts{margin-top:2px}
+.rail.rail2{grid-template-columns:2fr 1fr}
+.plist{display:flex;flex-direction:column;gap:7px}
+.plrow{display:flex;align-items:baseline;gap:8px;font-size:.78rem;border-bottom:1px dashed var(--line);padding-bottom:6px}
+.plrow:last-child{border-bottom:0;padding-bottom:0}
+.pln{font-weight:700;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.plq{font-family:"Space Mono",monospace;font-size:.64rem;color:var(--ink-soft);white-space:nowrap}
+.pl-dia{font-family:"Space Mono",monospace;font-size:.62rem;color:var(--ink-soft);white-space:nowrap}
+.mcell{min-height:38px}
+.medgrid{grid-template-columns:minmax(118px,1fr) repeat(6,minmax(0,1fr));gap:4px}
 </style>
 </head>
 <body>
@@ -890,14 +920,12 @@ input,textarea{-webkit-user-select:text;user-select:text}
     </div>
   </div>
   <div class="head-right">
-    <div class="cl-col">
-      <button class="cl-strip" id="clima" data-action="clima-actualizar" title="Tocar para actualizar"></button>
-      <button class="pw-pill" id="pw-pill" data-action="pw-toggle" title="Tocar para ver el significado"></button>
-    </div>
+    <button class="cl-strip" id="clima" data-action="clima-actualizar" title="Tocar para actualizar"></button>
     <div class="clock">
       <div class="t" id="ct">--:--</div>
       <div class="d" id="cd"></div>
     </div>
+    <div class="pw-head" id="pw-head"></div>
   </div>
 </header>
 
@@ -908,8 +936,6 @@ input,textarea{-webkit-user-select:text;user-select:text}
   <button class="tab" data-view="ranking">Ranking</button>
   <button class="tab" data-view="historial">Historial</button>
 </nav>
-
-<div class="pw-box" id="pw-box" hidden></div>
 
 <main id="main"></main>
 
@@ -1685,7 +1711,7 @@ S.on(e => { if(e.tipo === "sync" || e.tipo === "error") setSync(S.estado.conecta
 function setSync(ok){
   state.synced = ok;
   const el = document.getElementById("sync");
-  if(el) el.innerHTML = (ok ? "<b>\u25cf</b> sincronizado" : "\u25cb local") + " \u00b7 v2.4";
+  if(el) el.innerHTML = (ok ? "<b>\u25cf</b> sincronizado" : "\u25cb local") + " \u00b7 v2.5";
 }
 
 /* Respaldo. El storage es por artifact: al republicar, la URL nueva parte
@@ -2940,16 +2966,17 @@ function badgeRate(id){
    ordenada por vencimiento de izquierda a derecha. Lo urgente primero, y lo
    que vence hoy con su etiqueta ámbar. El detalle completo sigue viviendo en
    el Ritual; esta línea es la visibilidad diaria. */
-function lineaPolo(){
+/* El Polo Norte: cuadro compacto a la derecha de los remedios, ordenado por
+   vencimiento — lo urgente arriba, lo que vence HOY con su etiqueta ámbar. */
+function poloRows(){
   const vig = POLO.vigentes(TODAY_KEY);
-  if(!vig.length) return `<div class="polo-linea"><span class="pl-t">\u2744 POLO NORTE</span><span class="pl-vacio">vacío — en cuanto se cocine la primera tanda aparece acá</span></div>`;
-  const items = vig.slice().sort((a,b)=>String(a.vence).localeCompare(String(b.vence)))
+  if(!vig.length) return `<div class="empty" style="margin:0">Vacío. En cuanto se cocine la primera tanda aparece acá.</div>`;
+  return `<div class="plist">` + vig.slice().sort((a,b)=>String(a.vence).localeCompare(String(b.vence)))
     .map(b=>{
       const d = diasEntre(TODAY_KEY, b.vence);
-      const v = d<=0 ? `<span class="pl-hoy">HOY</span>` : d===1 ? "mañana" : DIAS[new Date(b.vence+"T12:00:00").getDay()===0?6:new Date(b.vence+"T12:00:00").getDay()-1].toLowerCase();
-      return `<span class="pl-item">${esc(b.titulo.length>22?b.titulo.slice(0,21)+"…":b.titulo)} <b>${b.restantes}</b> ${v}</span>`;
-    }).join(`<span class="pl-dot">·</span>`);
-  return `<div class="polo-linea"><span class="pl-t">\u2744 POLO NORTE</span>${items}</div>`;
+      const v = d<=0 ? `<span class="pl-hoy">HOY</span>` : d===1 ? `<span class="pl-dia">ma\u00f1ana</span>` : `<span class="pl-dia">en ${d} d\u00edas</span>`;
+      return `<div class="plrow"><span class="pln">${esc(b.titulo)}</span><span class="plq">${b.restantes} porc</span>${v}</div>`;
+    }).join("") + `</div>`;
 }
 
 /* ---- Clima: ventana rodante de 5 tramos -----------------------------
@@ -2989,15 +3016,13 @@ function pintarClima(){
    Salió del rail para devolverle ese espacio a los remedios. */
 function pintarPalabra(){
   const w = palabraDelDia(TODAY_KEY);
-  const pill = document.getElementById("pw-pill");
-  const box  = document.getElementById("pw-box");
-  if(!pill || !box) return;
-  if(!w){ pill.hidden = true; box.hidden = true; return; }
-  pill.hidden = false;
-  pill.innerHTML = `\u2726 ${esc(w.p.toUpperCase())}`;
-  box.innerHTML = `<b>${esc(w.p)}</b>`
-    + w.s.map(x=>`<span class="pw-chip">${esc(x)}</span>`).join("")
-    + `<span class="pw-def">${esc(w.d)}</span>`;
+  const el = document.getElementById("pw-head");
+  if(!el) return;
+  if(!w){ el.innerHTML = ""; return; }
+  el.innerHTML = `<span class="pwh-k">Palabra del día</span>
+    <span class="pw">${esc(w.p)}</span>
+    <span class="pw-s">${w.s.map(x=>`<span>${esc(x)}</span>`).join("")}</span>
+    <span class="pw-d">${esc(w.d)}</span>`;
 }
 
 
@@ -3135,7 +3160,7 @@ function bloqueEventos(fecha, compacto){
   }
   return `<button class="col-evts" data-action="abrir-dia" data-fecha="${fecha}">
     ${evs.slice(0,tope).map(e=>`<span class="cev"><span class="t">${esc(e.time)}</span><span>${esc(e.text)}</span></span>`).join("")}
-    ${evs.length>tope ? `<span class="evt-mas">+${evs.length-tope} más</span>` : (compacto?"":'<span class="evt-mas">tocar para editar</span>')}
+    ${evs.length>tope ? `<span class="evt-mas plus">\uFF0B${evs.length-tope} más</span>` : (compacto?"":'<span class="evt-mas">tocar para editar</span>')}
   </button>`;
 }
 
@@ -3147,7 +3172,9 @@ function renderSemana(){
   const pastIdx = [];
   for(let i=Math.max(0,todayIdx-PAST_MAX); i<todayIdx; i++) pastIdx.push(i);
   const futIdx = [];
-  for(let i=todayIdx+1; i<=Math.min(6,todayIdx+FUT_MAX); i++) futIdx.push(i);
+  /* El domingo nunca es columna propia: es día libre. Su calendario vive en
+     la columna del sábado. */
+  for(let i=todayIdx+1; i<=Math.min(5,todayIdx+FUT_MAX); i++) futIdx.push(i);
 
   const colToday = (i)=>{
     const id=MENU_SEMANAL[i], r=RECETAS[id] || {name:"—", tanda:0, cat:null};
@@ -3161,7 +3188,7 @@ function renderSemana(){
     /* Antes de las 16:00 la viñeta dice qué se cocina.
        Después, la misma viñeta pregunta cómo resultó. */
     const vineta = yaEsTarde
-      ? `<div class="col-rate">
+      ? `<div class="col-rate ${state.rateSel && state.rateSel.recetaId===id ? "rating" : ""}">
            <span class="k">¿Cómo resultó?</span>
            <span class="mname">${esc(r.name)}</span>
            ${starsHTML(id, sel)}
@@ -3198,6 +3225,28 @@ function renderSemana(){
     const d=weekDates[i];
     const b=plan[i];
     const fechaCol=iso(d);
+    /* El sábado cede su Banquete: el domingo es día libre y no tiene columna,
+       así que ese espacio muestra los calendarios de SÁBADO y DOMINGO, uno
+       sobre otro. Nada de la agenda del finde se pierde. */
+    if(i===5){
+      const dom = weekDates[6];
+      return `<div class="col future sat">
+      <button class="col-open-f" data-action="open-recipe" data-id="${MENU_SEMANAL[i]}">
+      <span class="col-head">
+        <span><span class="dname">${DIAS[i]}</span> <span class="dnum">${String(d.getDate()).padStart(2,"0")} ${d.toLocaleDateString("es-CL",{month:"short"}).replace(".","").toUpperCase()}</span></span>
+      </span>
+      <span class="col-meal">
+        <span class="k">${COMIDA.almuerzo}</span>
+        <span class="mname">${r.name}</span>
+        <span class="meta"><span class="pill ok">${r.tanda} porc.</span>${badgeRate(MENU_SEMANAL[i])}</span>
+      </span>
+      </button>
+      <span class="ev-lab">S\u00c1BADO</span>
+      ${bloqueEventos(fechaCol, true)}
+      <span class="ev-lab">DOMINGO ${String(dom.getDate()).padStart(2,"0")}</span>
+      ${bloqueEventos(iso(dom), true)}
+    </div>`;
+    }
     return `<div class="col future">
       <button class="col-open-f" data-action="open-recipe" data-id="${MENU_SEMANAL[i]}">
       <span class="col-head">
@@ -3208,7 +3257,7 @@ function renderSemana(){
         <span class="mname">${r.name}</span>
         <span class="meta"><span class="pill ok">${r.tanda} porc.</span>${badgeRate(MENU_SEMANAL[i])}</span>
       </span>
-      <span class="banq" style="margin:0 14px 12px">
+      <span class="banq" style="margin:6px 14px 0">
         <span class="bk">${COMIDA.cena}</span>
         <span class="bn">${b ? esc(b.titulo) : "falta"}</span>
         <span class="bd">${b
@@ -3245,11 +3294,14 @@ function renderSemana(){
 
   main.innerHTML=`<div class="board-wrap">
     <div class="board" id="board">${cols}</div>
-    ${lineaPolo()}
-    <aside class="rail rail-ancha">
-      <section class="panel" style="grid-column:1/-1">
+    <aside class="rail rail2">
+      <section class="panel">
         <h2>Remedios · hoy ${totalDosis?`<span class="soft">${dadasHoy}/${totalDosis} dosis</span>`:""}</h2>
         ${panelRemedios()}
+      </section>
+      <section class="panel">
+        <h2>El Polo Norte</h2>
+        ${poloRows()}
       </section>
     </aside>
   </div>`;
@@ -3786,11 +3838,6 @@ document.addEventListener("click",async e=>{
   if(a==="dose-plus")  return cambiarDosis(el.dataset.id, +1);
   if(a==="dose-minus") return cambiarDosis(el.dataset.id, -1);
 
-  if(a==="pw-toggle"){
-    const b = document.getElementById("pw-box");
-    if(b) b.hidden = !b.hidden;
-    return;
-  }
   /* Marcar una dosis es un acto de dos pasos a propósito: la casilla abre la
      pregunta de quién, y sólo la respuesta marca. Un toque accidental no
      registra nada. */
