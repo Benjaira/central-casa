@@ -231,6 +231,8 @@ main{padding:22px 24px;max-width:1880px;margin:0 auto}
 .col.past:active{opacity:.85}
 .col.past .col-head{padding:9px 8px 7px;border-bottom:1px dashed var(--line);display:block}
 .col.past .col-meal{padding:9px 8px}
+.col.past .mname{overflow:hidden;text-overflow:ellipsis;display:-webkit-box;
+  -webkit-line-clamp:2;-webkit-box-orient:vertical}
 .col.past .mname{font-weight:600}
 .col.future{opacity:.9}
 .col.future .mname{font-size:.98rem}
@@ -1750,7 +1752,9 @@ S.on(e => { if(e.tipo === "sync" || e.tipo === "error") setSync(S.estado.conecta
 function setSync(ok){
   state.synced = ok;
   const el = document.getElementById("sync");
-  if(el) el.innerHTML = (ok ? "<b>\u25cf</b> sincronizado" : "\u25cb local") + " \u00b7 v3.0";
+  if(el) el.innerHTML = (ok ? "<b>\u25cf</b> sincronizado" : "\u25cb local")
+    + " \u00b7 v3.1 \u00b7 " + window.innerWidth + "\u00d7" + window.innerHeight
+    + " @" + (window.devicePixelRatio||1);
 }
 
 /* Respaldo. El storage es por artifact: al republicar, la URL nueva parte
