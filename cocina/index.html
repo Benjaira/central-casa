@@ -224,8 +224,13 @@ main{padding:22px 24px;max-width:1880px;margin:0 auto}
 .board > .col.today{flex:1.7 1 0}
 .board > .col.future{flex:1 1 0}
 /* Días pasados: bloque compacto (izquierda) */
-.side-wrap{display:flex;gap:6px;flex:0 0 auto;align-items:stretch;position:relative}
-.past-side{padding-right:10px;margin-right:2px;border-right:2px dashed var(--line-strong)}
+.col.past{position:relative;overflow:visible}
+.col.past:first-of-type::before{content:"ATRÁS";position:absolute;top:-8px;left:2px;
+  font-family:"Space Mono",monospace;font-size:.58rem;letter-spacing:.16em;
+  color:var(--ink-soft);background:var(--paper);padding:0 6px}
+.col.past.ultimo{margin-right:.7rem}
+.col.past.ultimo::after{content:"";position:absolute;top:0;bottom:0;right:-.65rem;
+  border-right:2px dashed var(--line-strong)}
 .side-label{position:absolute;top:-8px;left:4px;font-family:"Space Mono",monospace;font-size:.58rem;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-soft);background:var(--paper);padding:0 6px}
 .col.past{flex:0 0 84px;min-height:auto;opacity:.5;background:var(--paper)}
 .col.past:active{opacity:.85}
@@ -860,25 +865,25 @@ input,textarea{-webkit-user-select:text;user-select:text}
 .pl-dot{color:var(--line-strong)} .pl-vacio{color:var(--ink-soft)}
 .medgrid{display:grid;grid-template-columns:minmax(132px,1.15fr) repeat(6,minmax(0,1fr));
   gap:5px;align-items:center;margin-top:4px}
-.mhora{text-align:center;font-family:"Space Mono",monospace;font-size:.6rem;
+.mhora{text-align:center;font-family:"Space Mono",monospace;font-size:var(--mho,.6rem);
   color:var(--ink-soft);white-space:nowrap;overflow:hidden}
 .mrow-label{display:flex;align-items:center;gap:7px;min-width:0}
-.mnom{font-weight:800;font-size:.76rem;line-height:1.25;display:flex;flex-direction:column;min-width:0}
-.mdet{font-weight:400;font-size:.64rem;color:var(--ink-soft)}
+.mnom{font-weight:800;font-size:var(--mf,.76rem);line-height:1.25;display:flex;flex-direction:column;min-width:0;white-space:var(--mnw,normal);overflow:hidden;text-overflow:ellipsis}
+.mdet{display:var(--mdd,block);font-weight:400;font-size:.64rem;color:var(--ink-soft)}
 .mcell{min-height:46px;border-radius:8px;border:1.5px solid var(--line);background:#fff;
   display:flex;flex-direction:column;align-items:center;justify-content:center;
-  font-size:1.05rem;color:#c9c4b8;cursor:pointer;padding:2px}
+  font-size:var(--mg,1.02rem);color:#c9c4b8;cursor:pointer;padding:0}
 .mcell.off{background:#f6f3ec;border:0;cursor:default}
 .mcell.activa{border-color:#F0A834}
 .mcell.dada{border-color:var(--ok)}
-.mck{color:var(--ok);font-size:1.05rem;line-height:1}
-.mquien{font-family:"Space Mono",monospace;font-size:.5rem;color:var(--ink-soft);
+.mck{color:var(--ok);font-size:var(--mg,1.02rem);line-height:1}
+.mquien{display:var(--mqd,flex);font-family:"Space Mono",monospace;font-size:var(--mq,.5rem);color:var(--ink-soft);
   letter-spacing:.03em;margin-top:2px;text-transform:uppercase}
 .medpick{margin-top:10px;background:#FAF7F0;border:1px solid var(--line);border-radius:10px;
   padding:9px 12px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:.8rem}
 @media (min-width:1180px){ html{font-size:17px} }
 @media (min-width:1500px){ html{font-size:19px}
-  .mcell{min-height:46px} .mquien{font-size:.55rem} }
+   }
 @media (min-width:1800px){ html{font-size:21px} }
 
 /* ---- v2.5 ---- */
@@ -889,14 +894,14 @@ input,textarea{-webkit-user-select:text;user-select:text}
 .pw-head .pw{font-size:1.25rem}
 .pw-head .pw-s{margin-top:4px}
 .pw-head .pw-d{margin-top:4px;font-size:.72rem;line-height:1.35}
-.col-rate,.col-meal{height:114px;overflow:hidden;padding:10px 14px 6px;
+.col-rate,.col-meal{height:6.9rem;overflow:hidden;padding:10px 14px 6px;
   box-sizing:border-box;display:flex;flex-direction:column;align-items:flex-start}
 .col-rate .mname,.col-meal .mname{display:-webkit-box;-webkit-line-clamp:2;
-  -webkit-box-orient:vertical;overflow:hidden;margin:2px 0 0;width:100%}
+  -webkit-box-orient:vertical;overflow:hidden;margin:2px 0 0;width:100%;line-height:1.32}
 .col-meal .meta{margin-top:auto}
 .col-rate .rt-stars{margin-top:auto}
 .col-rate.rating{height:auto;max-height:none}
-.banq{padding:6px 11px;height:96px;overflow:hidden;box-sizing:border-box;
+.banq{padding:6px 11px;height:5.9rem;overflow:hidden;box-sizing:border-box;
   display:flex;flex-direction:column;align-items:flex-start}
 .banq .bd{margin-top:auto}
 .banq .bn{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;
@@ -924,7 +929,7 @@ header{display:flex;justify-content:space-between;align-items:flex-start;gap:18p
 .pln{font-weight:700;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .plq{font-family:"Space Mono",monospace;font-size:.64rem;color:var(--ink-soft);white-space:nowrap}
 .pl-dia{font-family:"Space Mono",monospace;font-size:.62rem;color:var(--ink-soft);white-space:nowrap}
-.mcell{min-height:38px}
+.mcell{min-height:var(--mh,2.2rem)}
 .medgrid{grid-template-columns:minmax(118px,1fr) repeat(6,minmax(0,1fr));gap:4px}
 
 /* ---- v2.8 · correcciones medidas en render real ---- */
@@ -936,16 +941,74 @@ aside.rail.rail2{display:grid;grid-template-columns:2.08fr 1fr;gap:12px;align-it
 .rail.rail2 .panel{margin:0}
 /* Compactación vertical medida */
 .rail2 .panel{padding:10px 12px}
-.mcell{min-height:34px}
+
 .pw-head .pw{font-size:1.1rem}
 .pw-head .pw-d{display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
 .pw-head{max-width:230px}
 .tsec{margin:8px 0 4px}
 /* En flex, la base manda sobre height/min-height heredados */
-.col-open-f .col-meal{flex:0 0 114px;height:114px;min-height:114px;max-height:114px}
+.col-open-f .col-meal{flex:0 0 6.9rem;height:6.9rem;min-height:6.9rem;max-height:6.9rem}
 .col-open-f .col-head,.col-open-f .banq{flex:0 0 auto}
 .col-evts{margin-top:8px !important}
 .rail2{margin-top:10px}
+
+.med-det{border:0;background:none;color:var(--azul,#4a6d8c);font-family:"Space Mono",monospace;
+  font-size:.6rem;letter-spacing:.1em;padding:6px 2px 0;cursor:pointer}
+/* Presupuesto vertical para pantallas bajas: todo en una mirada */
+@media (max-height:800px){
+  header{padding:8px 16px 5px;gap:10px}
+  .brand h1{font-size:1.05rem;margin-top:0}
+  .brand .eyebrow{font-size:.5rem}
+  .chips{margin-top:2px} .chip{font-size:.56rem;padding:1px 8px}
+  .clock .t{font-size:1.35rem} .clock .d{font-size:.5rem}
+  .pw-head .pw{font-size:.95rem} .pw-head .pw-d{display:none}
+  .pwh-k{font-size:.48rem} .pw-head .pw-s span{font-size:.5rem;padding:1px 6px}
+  .cl-strip{padding:0} .cl-v{padding:1px 4px} .cl-t{font-size:.6rem} .cl-h{font-size:.48rem}
+  nav{padding-top:4px} .tab{font-size:.78rem;padding:6px 2px 8px}
+  .col-rate,.col-meal{height:6.5rem;padding:8px 12px 4px}
+  .col-open-f .col-meal{flex-basis:6.5rem;height:6.5rem;min-height:6.5rem;max-height:6.5rem}
+  .banq{height:5.6rem}
+  .col-evts{padding-top:4px;min-height:0}
+  /* El modo antiguo clavaba paneles y estrellas a medidas de otra época */
+  .rail2 .panel{height:auto !important;max-height:none !important;min-height:0 !important;overflow:visible}
+  .col{min-height:0 !important}
+  .rt-star{width:2rem;height:2rem;font-size:1.15rem}
+  .col-head{padding:8px 12px 6px}
+  .col-rate,.col-meal{height:6.35rem}
+  .col-open-f .col-meal{flex-basis:6.35rem;height:6.35rem;min-height:6.35rem;max-height:6.35rem}
+  .banq{height:5.45rem}
+  main{padding:6px 18px}
+  body{padding-bottom:8px}
+  .panel h2{padding-bottom:6px;margin-bottom:6px}
+  .rail2{margin-top:3px}
+  .cev{line-height:1.25}
+  .col-evts .evt-mas:not(.plus){display:none}
+  .med-det{padding-top:2px}
+  .cl-i{width:22px;height:22px}
+  header{padding-bottom:4px}
+  .tab{min-height:36px !important}
+  .col-head{padding:6px 12px 5px}
+  .col-evts{padding:4px 10px 6px !important}
+  .banq{margin-top:4px !important}
+  .col.today .banq{margin:4px 14px 0}
+  .col-rate,.col-meal{height:6.3rem}
+  .col-open-f .col-meal{flex-basis:6.3rem;height:6.3rem;min-height:6.3rem;max-height:6.3rem}
+  .plrow{padding-bottom:4px} .plist{gap:5px}
+  body{padding-bottom:6px}
+  header{padding:6px 16px 3px}
+  .clock .t{font-size:1.2rem}
+  .cl-t{font-size:.56rem}
+  .pw-head .pw{font-size:.9rem}
+  nav{padding:2px 18px 0}
+  .tab{min-height:0 !important;padding:4px 2px 6px;font-size:.75rem}
+  .banq{height:5.4rem}
+  .col-head{padding:5px 12px 4px}
+  .rail2 .panel{padding:6px 10px}
+  .cev{font-size:.7rem} 
+  .rail2{margin-top:6px}
+  .rail2 .panel{padding:8px 10px}
+  .panel h2{padding-bottom:8px;margin-bottom:8px}
+}
 </style>
 </head>
 <body>
@@ -973,6 +1036,7 @@ aside.rail.rail2{display:grid;grid-template-columns:2.08fr 1fr;gap:12px;align-it
 <nav>
   <button class="tab active" data-view="semana">Semana</button>
   <button class="tab" data-view="compras">Compras <span class="count" id="shop-count">0</span></button>
+  <button class="tab" data-view="remedios">Remedios</button>
   <button class="tab" data-view="ritual">Ritual</button>
   <button class="tab" data-view="ranking">Ranking</button>
   <button class="tab" data-view="historial">Historial</button>
@@ -1753,7 +1817,7 @@ function setSync(ok){
   state.synced = ok;
   const el = document.getElementById("sync");
   if(el) el.innerHTML = (ok ? "<b>\u25cf</b> sincronizado" : "\u25cb local")
-    + " \u00b7 v3.1 \u00b7 " + window.innerWidth + "\u00d7" + window.innerHeight
+    + " \u00b7 v3.3 \u00b7 " + window.innerWidth + "\u00d7" + window.innerHeight
     + " @" + (window.devicePixelRatio||1);
 }
 
@@ -2837,6 +2901,7 @@ function render(){
   pintarClima();
   if(state.view==="semana")    return renderSemana();
   if(state.view==="compras")   return renderCompras();
+  if(state.view==="remedios")  return renderRemedios();
   if(state.view==="ritual")    return renderRitual();
   if(state.view==="ranking")   return renderRanking();
   if(state.view==="historial") return renderHistorial();
@@ -2920,21 +2985,52 @@ function tratRowFin(t){
   </div>`;
 }
 
+/* La grilla se comprime sola: más tratamientos → celdas y letras más chicas,
+   para que la pantalla completa quepa SIEMPRE en una mirada, sin scroll.
+   Tres niveles de densidad, elegidos por cantidad de filas. */
+function densidadMed(n){
+  if(n<=3) return {h:"1.95rem", f:".72rem", q:".46rem", ho:".56rem", mg:".98rem", g:"4px"};
+  if(n<=5) return {h:"1.7rem", f:".66rem", q:".44rem", ho:".54rem", mg:".88rem",  g:"3px"};
+  return        {h:"1.1rem", f:".57rem", q:".38rem", ho:".46rem", mg:".66rem", qd:"none", dd:"none", nw:"nowrap", g:"1px"};
+}
+
+function medGrid(){
+  const prog = state.vigentes.filter(t=>!t.sos);
+  if(!prog.length) return "";
+  const d = densidadMed(prog.length);
+  return `<div class="medgrid" style="--mh:${d.h};--mf:${d.f};--mq:${d.q};--mho:${d.ho};--mg:${d.mg};--mqd:${d.qd||"flex"};--mdd:${d.dd||"block"};--mnw:${d.nw||"normal"};gap:${d.g}">
+      <div></div>${ANCLAS_MED.map(([a,l])=>`<div class="mhora" title="${l}">${a}</div>`).join("")}
+      ${prog.map(filaMed).join("")}
+    </div>`;
+}
+
+function medPickHTML(){
+  if(!state.medPick) return "";
+  return `<div class="medpick">¿Quién dio <b>${esc((state.vigentes.find(t=>t.id===state.medPick.id)||{}).nombreComercial||"la dosis")}</b> de las ${esc(state.medPick.slot)}?
+      ${CUIDADORES.map(q=>`<button data-action="dose-who" data-q="${q}">${q}</button>`).join("")}
+      <button data-action="dose-cancel" class="soft">cancelar</button></div>`;
+}
+
+/* Vista Semana: SOLO lo que se está dando, comprimido. El detalle (SOS,
+   terminados, advertencias) vive en su propia pestaña. */
 function panelRemedios(){
   const prog = state.vigentes.filter(t=>!t.sos);
   const sos  = state.vigentes.filter(t=>t.sos);
-  if(prog.length || sos.length){
-    const grilla = prog.length ? `<div class="medgrid">
-        <div></div>${ANCLAS_MED.map(([a,l])=>`<div class="mhora" title="${l}">${a}</div>`).join("")}
-        ${prog.map(filaMed).join("")}
-      </div>` : "";
-    const pick = state.medPick ? `<div class="medpick">¿Quién dio <b>${esc((state.vigentes.find(t=>t.id===state.medPick.id)||{}).nombreComercial||"la dosis")}</b> de las ${esc(state.medPick.slot)}?
-        ${CUIDADORES.map(q=>`<button data-action="dose-who" data-q="${q}">${q}</button>`).join("")}
-        <button data-action="dose-cancel" class="soft">cancelar</button></div>` : "";
-    const sosHtml = sos.length ? `<div class="tsec">Si hace falta</div>` + sos.map(tratRow).join("") : "";
-    return grilla + pick + sosHtml + panelRemediosResto();
-  }
-  return panelRemediosViejo();
+  if(!prog.length && !sos.length) return panelRemediosViejo();
+  const linkDet = `<button class="med-det" data-view="remedios">detalle y SOS \u2192</button>`;
+  return medGrid() + medPickHTML() + (prog.length ? linkDet
+    : `<div class="empty" style="margin:0">Sin tratamientos programados. ${sos.length} SOS en la pesta\u00f1a Remedios.</div>`);
+}
+
+/* Pestaña Remedios: el panel completo, sin compresión. */
+function renderRemedios(){
+  const sos = state.vigentes.filter(t=>t.sos);
+  main.innerHTML = `<div class="board-wrap"><section class="panel" style="max-width:920px">
+    <h2>Remedios \u00b7 hoy</h2>
+    ${medGrid()} ${medPickHTML()}
+    ${sos.length ? `<div class="tsec">Si hace falta</div>` + sos.map(tratRow).join("") : ""}
+    ${panelRemediosResto()}
+  </section></div>`;
 }
 
 function panelRemediosViejo(){
@@ -3307,7 +3403,7 @@ function renderSemana(){
     const r=RECETAS[MENU_SEMANAL[i]] || {name:"—"};
     const d=weekDates[i];
     const nEv = eventosDe(iso(d)).length;
-    return `<button class="col past" data-action="abrir-dia" data-fecha="${iso(d)}">
+    return `<button class="col past ${i===todayIdx-1?"ultimo":""}" data-action="abrir-dia" data-fecha="${iso(d)}">
       <span class="col-head">
         <span class="dname">${DIAS[i]}</span> <span class="dnum">${String(d.getDate()).padStart(2,"0")}</span>
       </span>
@@ -3319,8 +3415,12 @@ function renderSemana(){
     </button>`;
   };
 
+  /* Sin envoltorio: cada pasado es una pista propia de la grilla. El wrap
+     era un intermediario que el WebView de la tablet inflaba a su antojo;
+     con pistas puras no hay nada que interpretar. La etiqueta ATRÁS y la
+     punteada divisoria viven ahora en los propios pasados vía CSS. */
   const cols =
-      (pastIdx.length ? `<div class="side-wrap past-side"><div class="side-label">Atrás</div>${pastIdx.map(colPast).join("")}</div>` : "")
+      pastIdx.map(colPast).join("")
     + colToday(todayIdx)
     + futIdx.map(colFuture).join("");
 
@@ -3333,7 +3433,7 @@ function renderSemana(){
      el jueves; una calculada no revienta nunca. */
   /* Los pasados van en UN envoltorio (una sola pista, ancho a su contenido);
      HOY toma 1.7 partes y cada futuro una. Medido, no supuesto. */
-  const plantilla = [pastIdx.length ? "max-content" : "", "minmax(0,1.7fr)",
+  const plantilla = [pastIdx.length ? `repeat(${pastIdx.length},5rem)` : "", "minmax(0,1.7fr)",
     futIdx.length ? `repeat(${futIdx.length},minmax(0,1fr))` : ""].filter(Boolean).join(" ");
   main.innerHTML=`<div class="board-wrap">
     <div class="board" id="board" style="display:grid;grid-template-columns:${plantilla};gap:10px">${cols}</div>
