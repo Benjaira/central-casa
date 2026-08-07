@@ -879,8 +879,15 @@ input,textarea{-webkit-user-select:text;user-select:text}
 .mck{color:var(--ok);font-size:var(--mg,1.02rem);line-height:1}
 .mquien{display:var(--mqd,flex);font-family:"Space Mono",monospace;font-size:var(--mq,.5rem);color:var(--ink-soft);
   letter-spacing:.03em;margin-top:2px;text-transform:uppercase}
-.medpick{margin-top:10px;background:#FAF7F0;border:1px solid var(--line);border-radius:10px;
-  padding:9px 12px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:.8rem}
+.medpick{position:absolute;top:2.6rem;left:8px;right:8px;z-index:6;
+  background:#fff;border:2px solid var(--ink);border-radius:12px;
+  box-shadow:0 8px 24px rgba(30,25,15,.22);
+  padding:10px 14px;display:flex;align-items:center;gap:9px;flex-wrap:wrap;font-size:.82rem}
+.rail2 .panel{position:relative}
+.medpick button{min-height:42px;padding:6px 18px;border:2px solid var(--ink);
+  border-radius:10px;background:#fff;font-weight:800;font-size:.85rem;cursor:pointer}
+.medpick button:active{background:var(--hoy-soft,#FBEED3)}
+.medpick button.soft{border-color:var(--line-strong);color:var(--ink-soft);font-weight:400;font-size:.75rem}
 @media (min-width:1180px){ html{font-size:17px} }
 @media (min-width:1500px){ html{font-size:19px}
    }
@@ -924,11 +931,17 @@ header{display:flex;justify-content:space-between;align-items:flex-start;gap:18p
   border-left:0;border-right:0;padding-left:0}
 .pw-head .pw-s{justify-content:flex-end}
 .plist{display:flex;flex-direction:column;gap:7px}
-.plrow{display:flex;align-items:baseline;gap:8px;font-size:.78rem;border-bottom:1px dashed var(--line);padding-bottom:6px}
+.plrow{display:flex;align-items:baseline;gap:8px;font-size:.78rem;border-bottom:1px dashed var(--line);padding-bottom:6px;
+  background:none;border-left:0;border-right:0;border-top:0;width:100%;text-align:left;font-family:inherit;cursor:pointer;color:inherit}
+.plrow:active{background:var(--hoy-soft,#FBEED3)}
 .plrow:last-child{border-bottom:0;padding-bottom:0}
 .pln{font-weight:700;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .plq{font-family:"Space Mono",monospace;font-size:.64rem;color:var(--ink-soft);white-space:nowrap}
 .pl-dia{font-family:"Space Mono",monospace;font-size:.62rem;color:var(--ink-soft);white-space:nowrap}
+.sn-sec{margin-top:9px;border-top:2px solid var(--ink);padding-top:7px}
+.sn-k{font-family:"Space Mono",monospace;font-size:.56rem;letter-spacing:.18em;
+  text-transform:uppercase;color:var(--ink-soft);margin-bottom:6px}
+.snrow{display:flex;align-items:baseline;gap:8px;font-size:.78rem;padding-bottom:5px}
 .mcell{min-height:var(--mh,2.2rem)}
 .medgrid{grid-template-columns:minmax(118px,1fr) repeat(6,minmax(0,1fr));gap:4px}
 
@@ -1699,6 +1712,8 @@ const state = {
   meds:{},            // {tratamientoId: nDosisDadasHoy} — se mantiene por compatibilidad
   meds2:{},           // {"tratId|HH:MM": {por, t}} — quién dio cada dosis y a qué hora
   medPick:null,       // dosis esperando que se responda quién la dio
+  poloPick:null,      // tanda del Polo Norte esperando cuántas porciones salen
+  snacks:[],          // tandas del mesón: se preparan 1-2 veces/semana, duran días
   falta:[],           // [{name,got}]
   shopGot:{},         // {itemName:true} — de esta semana
   events:{},          // {fecha:[{time,text}]} — anotados a mano, toda la semana
@@ -1816,9 +1831,7 @@ S.on(e => { if(e.tipo === "sync" || e.tipo === "error") setSync(S.estado.conecta
 function setSync(ok){
   state.synced = ok;
   const el = document.getElementById("sync");
-  if(el) el.innerHTML = (ok ? "<b>\u25cf</b> sincronizado" : "\u25cb local")
-    + " \u00b7 v3.3 \u00b7 " + window.innerWidth + "\u00d7" + window.innerHeight
-    + " @" + (window.devicePixelRatio||1);
+  if(el) el.innerHTML = (ok ? "<b>\u25cf</b> sincronizado" : "\u25cb local") + " \u00b7 v3.6b";
 }
 
 /* Respaldo. El storage es por artifact: al republicar, la URL nueva parte
@@ -2727,10 +2740,11 @@ $("#week-label").textContent = "Semana del " + monday.toLocaleDateString("es-CL"
 
 /* ================= CARGA COMPARTIDA ================= */
 async function loadShared(){
-  const [m,m2,f,s,e,ra,rv,nv,ag] = await Promise.all([
+  const [m,m2,f,s,e,ra,rv,nv,ag,sn] = await Promise.all([
     sget("meds:"+TODAY_KEY), sget("meds2:"+TODAY_KEY), sget("falta"), sget("shopgot:"+WEEK_KEY), cargarEventosSemana(),
-    sget("rate:agg"), sget("rate:veto"), sget("polo"), sget("agenda:"+WEEK_KEY)
+    sget("rate:agg"), sget("rate:veto"), sget("polo"), sget("agenda:"+WEEK_KEY), sget("snacks:"+WEEK_KEY)
   ]);
+  if(Array.isArray(sn)) state.snacks = sn;
   if(m) state.meds = m;
   if(m2) state.meds2 = m2;
   if(f) state.falta = f;
@@ -3025,7 +3039,7 @@ function panelRemedios(){
 /* Pestaña Remedios: el panel completo, sin compresión. */
 function renderRemedios(){
   const sos = state.vigentes.filter(t=>t.sos);
-  main.innerHTML = `<div class="board-wrap"><section class="panel" style="max-width:920px">
+  main.innerHTML = `<div class="board-wrap"><section class="panel" style="max-width:920px;position:relative">
     <h2>Remedios \u00b7 hoy</h2>
     ${medGrid()} ${medPickHTML()}
     ${sos.length ? `<div class="tsec">Si hace falta</div>` + sos.map(tratRow).join("") : ""}
@@ -3106,8 +3120,39 @@ function poloRows(){
     .map(b=>{
       const d = diasEntre(TODAY_KEY, b.vence);
       const v = d<=0 ? `<span class="pl-hoy">HOY</span>` : d===1 ? `<span class="pl-dia">ma\u00f1ana</span>` : `<span class="pl-dia">en ${d} d\u00edas</span>`;
-      return `<div class="plrow"><span class="pln">${esc(b.titulo)}</span><span class="plq">${b.restantes} porc</span>${v}</div>`;
+      return `<button class="plrow" data-action="polo-sacar" data-id="${b.id}">
+        <span class="pln">${b.congelado?"\u2744 ":""}${esc(b.titulo)}</span>
+        <span class="plq">${b.restantes} porc</span>${v}</button>`;
     }).join("") + `</div>`;
+}
+
+/* Sacar del Polo Norte: tocas la tanda, eliges cuántas porciones. El
+   flotante no empuja nada — mismo patrón que el quién-dio-la-dosis. */
+/* Snacks de la semana: tandas del mesón. Se eligen en el Ritual, sus
+   ingredientes caen a Compras, y acá sólo se VEN: qué hay y hasta cuándo.
+   Sin datos, la sección no existe — cero costo visual. */
+function snacksHTML(){
+  const vig = (state.snacks||[]).filter(s=>s && s.vence >= TODAY_KEY);
+  if(!vig.length) return "";
+  const dia = v => { const d=diasEntre(TODAY_KEY,v);
+    return d<=0 ? `<span class="pl-hoy">HOY</span>`
+         : d===1 ? `<span class="pl-dia">hasta ma\u00f1ana</span>`
+         : `<span class="pl-dia">hasta ${DIAS[(new Date(v+"T12:00:00").getDay()+6)%7].toLowerCase()}</span>`; };
+  return `<div class="sn-sec"><div class="sn-k">Snacks de la semana</div>` +
+    vig.sort((a,b)=>String(a.vence).localeCompare(String(b.vence)))
+       .map(s=>`<div class="snrow"><span class="pln">${esc(s.titulo)}</span>${dia(s.vence)}</div>`).join("")
+    + `</div>`;
+}
+
+function poloPickHTML(){
+  if(!state.poloPick) return "";
+  const b = state.polo.find(x=>x.id===state.poloPick);
+  if(!b) return "";
+  const ops = [1,2,4].filter(n=>n<b.restantes);
+  if(!ops.includes(b.restantes)) ops.push(b.restantes);
+  return `<div class="medpick"><span style="flex-basis:100%">Sacar <b>${esc(b.titulo)}</b> \u2014 \u00bfcu\u00e1ntas porciones?</span>
+    ${ops.map(n=>`<button data-action="polo-take" data-id="${b.id}" data-n="${n}">${n===b.restantes?"todas \u00b7 "+n:n}</button>`).join("")}
+    <button data-action="polo-cancel" class="soft">cancelar</button></div>`;
 }
 
 /* ---- Clima: ventana rodante de 5 tramos -----------------------------
@@ -3445,6 +3490,8 @@ function renderSemana(){
       <section class="panel">
         <h2>El Polo Norte</h2>
         ${poloRows()}
+        ${snacksHTML()}
+        ${poloPickHTML()}
       </section>
     </aside>
   </div>`;
@@ -3989,6 +4036,16 @@ document.addEventListener("click",async e=>{
     return render();
   }
   if(a==="dose-cancel"){ state.medPick = null; return render(); }
+
+  if(a==="polo-sacar"){ state.poloPick = el.dataset.id; state.medPick=null; return render(); }
+  if(a==="polo-cancel"){ state.poloPick = null; return render(); }
+  if(a==="polo-take"){
+    const n = Number(el.dataset.n)||1;
+    const b = POLO.servir(el.dataset.id, TODAY_KEY, n);
+    state.poloPick = null;
+    if(b) showToast(`\u2212${n} porc \u00b7 ${b.titulo}${b.restantes?` \u2014 quedan ${b.restantes}`:" \u2014 se termin\u00f3"}`);
+    return render();
+  }
   if(a==="dose-who"){
     if(!state.medPick) return;
     const k = state.medPick.id + "|" + state.medPick.slot;
