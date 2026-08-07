@@ -217,7 +217,7 @@ nav{display:flex;border-bottom:1px solid var(--line-strong);padding:0 24px;gap:4
 .tab.active{color:var(--ink);border-bottom-color:var(--hoy)}
 .tab .count{font-family:"Space Mono",monospace;font-size:.72rem;background:var(--ink);color:var(--paper);padding:2px 8px;border-radius:99px}
 
-main{padding:22px 24px;max-width:1600px;margin:0 auto}
+main{padding:22px 24px;max-width:1880px;margin:0 auto}
 .board-wrap{display:flex;flex-direction:column;gap:16px}
 .board{display:flex;gap:10px;align-items:stretch}
 .board > .col{flex:1 1 0;min-width:0}
@@ -875,6 +875,9 @@ input,textarea{-webkit-user-select:text;user-select:text}
 .medpick{margin-top:10px;background:#FAF7F0;border:1px solid var(--line);border-radius:10px;
   padding:9px 12px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:.8rem}
 @media (min-width:1180px){ html{font-size:17px} }
+@media (min-width:1500px){ html{font-size:19px}
+  .mcell{min-height:46px} .mquien{font-size:.55rem} }
+@media (min-width:1800px){ html{font-size:21px} }
 
 /* ---- v2.5 ---- */
 .pw-head{border-left:1px solid var(--line-strong);padding-left:16px;margin-left:6px;
@@ -1747,7 +1750,7 @@ S.on(e => { if(e.tipo === "sync" || e.tipo === "error") setSync(S.estado.conecta
 function setSync(ok){
   state.synced = ok;
   const el = document.getElementById("sync");
-  if(el) el.innerHTML = (ok ? "<b>\u25cf</b> sincronizado" : "\u25cb local") + " \u00b7 v2.9b";
+  if(el) el.innerHTML = (ok ? "<b>\u25cf</b> sincronizado" : "\u25cb local") + " \u00b7 v3.0";
 }
 
 /* Respaldo. El storage es por artifact: al republicar, la URL nueva parte
@@ -2948,22 +2951,14 @@ function panelRemediosResto(){
       : `Sube la receta médica al chat de Claude y aparecerán aquí con su control de dosis.`;
     return `<div class="empty"><b>Sin tratamientos vigentes hoy.</b> ${extra}</div>${fin}${toggle}`;
   }
+  /* La grilla YA muestra cada tratamiento con sus dosis: repetirlos abajo
+     como contadores era ruido puro. El Resto conserva sólo lo que la grilla
+     no dice: la advertencia de doble presentación y los terminados. */
   let out = "";
   if(state.dups.length){
     out += `<div class="warnbox">⚠️ <b>Ojo:</b> ${state.dups.map(d=>esc(d.principioActivo)).join(", ")} aparece en dos presentaciones distintas. Es una <b>o</b> la otra — nunca las dos juntas.</div>`;
   }
-  /* Agrupado por persona: con tres personas en la casa, el punto rojo solo
-     ya no alcanza para saber de quién es cada gota. */
-  ["J","D","Dm"].forEach(p=>{
-    const suyos = state.vigentes.filter(t=>(t.ninoId||"J")===p);
-    if(!suyos.length) return;
-    const nom = (HIST.NINOS[p]||{}).nombre || p;
-    out += `<div class="tsec">${esc(nom)}</div>`;
-    out += suyos.filter(t=>!t.sos).map(tratRow).join("");
-    out += suyos.filter(t=>t.sos).map(tratRow).join("");
-  });
   out += fin + toggle;
-  out += `<div class="legend"><span><span class="kdot J"></span>Julián</span><span><span class="kdot D"></span>Domingo</span><span><span class="kdot Dm"></span>demo</span></div>`;
   return out;
 }
 
@@ -3328,8 +3323,16 @@ function renderSemana(){
   const totalDosis = state.vigentes.reduce((a,t)=>a+(dosisPorDia(t.frecuencia)&&!t.sos?dosisPorDia(t.frecuencia):0),0);
   const dadasHoy   = state.vigentes.filter(t=>!t.sos).reduce((a,t)=>a+(state.meds[t.id]||0),0);
 
+  /* La grilla del tablero se calcula con la composición REAL del día:
+     N pasados angostos (más angosto mientras más viejo — se van quedando
+     atrás), HOY ancho, y los futuros parejos. Una plantilla fija revienta
+     el jueves; una calculada no revienta nunca. */
+  /* Los pasados van en UN envoltorio (una sola pista, ancho a su contenido);
+     HOY toma 1.7 partes y cada futuro una. Medido, no supuesto. */
+  const plantilla = [pastIdx.length ? "max-content" : "", "minmax(0,1.7fr)",
+    futIdx.length ? `repeat(${futIdx.length},minmax(0,1fr))` : ""].filter(Boolean).join(" ");
   main.innerHTML=`<div class="board-wrap">
-    <div class="board" id="board">${cols}</div>
+    <div class="board" id="board" style="display:grid;grid-template-columns:${plantilla};gap:10px">${cols}</div>
     <aside class="rail rail2">
       <section class="panel">
         <h2>Remedios · hoy ${totalDosis?`<span class="soft">${dadasHoy}/${totalDosis} dosis</span>`:""}</h2>
