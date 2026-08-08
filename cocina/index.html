@@ -631,7 +631,7 @@ main{overflow-x:hidden}
 .cl-strip:empty{display:none}
 @media(max-width:1100px){
   .cl-v{min-width:44px}
-  .cl-i{width:24px;height:24px}
+  .cl-i{width:23px;height:23px}
   .cl-h{font-size:.54rem}
   .cl-t{font-size:.7rem}
 }
@@ -938,10 +938,10 @@ header{display:flex;justify-content:space-between;align-items:flex-start;gap:18p
 .pln{font-weight:700;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .plq{font-family:"Space Mono",monospace;font-size:.64rem;color:var(--ink-soft);white-space:nowrap}
 .pl-dia{font-family:"Space Mono",monospace;font-size:.62rem;color:var(--ink-soft);white-space:nowrap}
-.sn-sec{margin-top:9px;border-top:2px solid var(--ink);padding-top:7px}
+.sn-sec{margin-top:6px;border-top:2px solid var(--ink);padding-top:5px}
 .sn-k{font-family:"Space Mono",monospace;font-size:.56rem;letter-spacing:.18em;
   text-transform:uppercase;color:var(--ink-soft);margin-bottom:6px}
-.snrow{display:flex;align-items:baseline;gap:8px;font-size:.78rem;padding-bottom:5px}
+.snrow{display:flex;align-items:baseline;gap:8px;font-size:.78rem;padding-bottom:4px}
 .mcell{min-height:var(--mh,2.2rem)}
 .medgrid{grid-template-columns:minmax(118px,1fr) repeat(6,minmax(0,1fr));gap:4px}
 
@@ -957,7 +957,7 @@ aside.rail.rail2{display:grid;grid-template-columns:2.08fr 1fr;gap:12px;align-it
 
 .pw-head .pw{font-size:1.1rem}
 .pw-head .pw-d{display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
-.pw-head{max-width:230px}
+.pw-head{max-width:300px}
 .tsec{margin:8px 0 4px}
 /* En flex, la base manda sobre height/min-height heredados */
 .col-open-f .col-meal{flex:0 0 6.9rem;height:6.9rem;min-height:6.9rem;max-height:6.9rem}
@@ -972,10 +972,13 @@ aside.rail.rail2{display:grid;grid-template-columns:2.08fr 1fr;gap:12px;align-it
   header{padding:8px 16px 5px;gap:10px}
   .brand h1{font-size:1.05rem;margin-top:0}
   .brand .eyebrow{font-size:.5rem}
-  .chips{margin-top:2px} .chip{font-size:.56rem;padding:1px 8px}
+  .chips{margin-top:3px} .chip{font-size:.6rem;padding:2px 9px}
   .clock .t{font-size:1.35rem} .clock .d{font-size:.5rem}
-  .pw-head .pw{font-size:.95rem} .pw-head .pw-d{display:none}
-  .pwh-k{font-size:.48rem} .pw-head .pw-s span{font-size:.5rem;padding:1px 6px}
+  .pw-head{max-width:340px}
+  .pw-head .pw{font-size:1.1rem}
+  .pw-head .pw-d{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;
+    overflow:hidden;font-size:.62rem;line-height:1.35;margin-top:3px}
+  .pwh-k{font-size:.5rem} .pw-head .pw-s span{font-size:.54rem;padding:1px 7px}
   .cl-strip{padding:0} .cl-v{padding:1px 4px} .cl-t{font-size:.6rem} .cl-h{font-size:.48rem}
   nav{padding-top:4px} .tab{font-size:.78rem;padding:6px 2px 8px}
   .col-rate,.col-meal{height:6.5rem;padding:8px 12px 4px}
@@ -990,33 +993,33 @@ aside.rail.rail2{display:grid;grid-template-columns:2.08fr 1fr;gap:12px;align-it
   .col-rate,.col-meal{height:6.35rem}
   .col-open-f .col-meal{flex-basis:6.35rem;height:6.35rem;min-height:6.35rem;max-height:6.35rem}
   .banq{height:5.45rem}
-  main{padding:6px 18px}
+  main{padding:4px 18px 5px}
   body{padding-bottom:8px}
-  .panel h2{padding-bottom:6px;margin-bottom:6px}
-  .rail2{margin-top:3px}
+  .panel h2{padding-bottom:5px;margin-bottom:5px}
+  .rail2{margin-top:2px}
   .cev{line-height:1.25}
   .col-evts .evt-mas:not(.plus){display:none}
   .med-det{padding-top:2px}
-  .cl-i{width:22px;height:22px}
+  .cl-i{width:23px;height:23px}
   header{padding-bottom:4px}
   .tab{min-height:36px !important}
   .col-head{padding:6px 12px 5px}
-  .col-evts{padding:4px 10px 6px !important}
-  .banq{margin-top:4px !important}
+  .col-evts{padding:3px 10px 5px !important}
+  .banq{margin-top:3px !important}
   .col.today .banq{margin:4px 14px 0}
   .col-rate,.col-meal{height:6.3rem}
   .col-open-f .col-meal{flex-basis:6.3rem;height:6.3rem;min-height:6.3rem;max-height:6.3rem}
   .plrow{padding-bottom:4px} .plist{gap:5px}
-  body{padding-bottom:6px}
-  header{padding:6px 16px 3px}
-  .clock .t{font-size:1.2rem}
-  .cl-t{font-size:.56rem}
+  body{padding-bottom:3px}
+  header{padding:9px 16px 5px}
+  .clock .t{font-size:1.35rem}
+  .cl-t{font-size:.6rem}
   .pw-head .pw{font-size:.9rem}
-  nav{padding:2px 18px 0}
-  .tab{min-height:0 !important;padding:4px 2px 6px;font-size:.75rem}
+  nav{padding:1px 18px 0}
+  .tab{min-height:0 !important;padding:5px 2px 6px;font-size:.8rem}
   .banq{height:5.4rem}
-  .col-head{padding:5px 12px 4px}
-  .rail2 .panel{padding:6px 10px}
+  .col-head{padding:4px 12px 3px}
+  .rail2 .panel{padding:5px 10px}
   .cev{font-size:.7rem} 
   .rail2{margin-top:6px}
   .rail2 .panel{padding:8px 10px}
@@ -1577,34 +1580,34 @@ const REGLA_SEMANA = "3 legumbres · 2 arroz/pasta · 1 guiso · pescado ×2 · 
 const RECETAS_BASE = {
   lentejas:{name:"Lentejas con arroz y ensalada", diff:1, time:"45 min", tags:["Legumbre 1/3"],
     cat:"legumbre", fuente:"Receta de la casa · pauta 25-jun-2026",
-    ings:[["Lentejas","500 g"],["Arroz","1 taza"],["Zanahoria","3 un"],["Cebolla","1 un"],["Zapallo","300 g"],["Ajo","2 dientes"],["Lechuga + tomate","p/ ensalada"],["Aceite de oliva","3 cdas"]],
-    steps:["Remojar las lentejas desde la noche anterior.","Sofreír cebolla, ajo y zanahoria rallada en aceite de oliva, SIN SAL.","Agregar lentejas, zapallo en cubos y agua. Cocinar 30-35 min. Sazonar con comino y orégano.","Servir 1 taza sobre ¾ taza de arroz graneado, con ensalada de colores al lado."],
-    julian:"1 taza de lentejas con verduras + ensalada + 1 cdta aceite oliva + 1 fruta. Sin sal en toda la olla — el sabor va en comino, orégano y ajo."},
+    ings:[["Lentejas","500 g"],["Arroz","1 taza"],["Zanahoria","3 un"],["Cebolla","1 un"],["Zapallo","300 g"],["Lechuga + tomate","p/ ensalada"],["Aceite de oliva","3 cdas"]],
+    steps:["Remojar las lentejas desde la noche anterior.","Sofreír cebolla y zanahoria rallada en aceite de oliva, SIN SAL.","Agregar lentejas, zapallo en cubos y agua. Cocinar 30-35 min. Sazonar con comino y orégano.","Servir 1 taza sobre ¾ taza de arroz graneado, con ensalada de colores al lado."],
+    julian:"1 taza de lentejas con verduras + ensalada + 1 cdta aceite oliva + 1 fruta. Sin sal en toda la olla — el sabor va en comino y orégano."},
   pasta_pollo:{name:"Pasta con salsa de verduras y pollo", diff:1, time:"35 min", tags:["Arroz/pasta 1/2","Pollo 1/2"],
     cat:"cereal", cats:["cereal","ave"], fuente:"Receta de la casa · pauta 25-jun-2026",
-    ings:[["Fideos (integral ideal)","400 g"],["Pechuga de pollo","400 g"],["Tomate","4 un"],["Zanahoria","2 un"],["Zapallo italiano","1 un"],["Albahaca fresca","1 atado"],["Ajo","2 dientes"],["Aceite de oliva","3 cdas"]],
-    steps:["Cocer los fideos sin sal en el agua.","Salsa: sofreír ajo, tomate rallado, zanahoria y zapallito; albahaca al final.","Dorar el pollo en tiritas con pimienta y orégano, mezclar con la salsa.","Servir ¾ taza de pasta con salsa para Julián."],
+    ings:[["Fideos (integral ideal)","400 g"],["Pechuga de pollo","400 g"],["Tomate","4 un"],["Zanahoria","2 un"],["Zapallo italiano","1 un"],["Albahaca fresca","1 atado"],["Aceite de oliva","3 cdas"]],
+    steps:["Cocer los fideos sin sal en el agua.","Salsa: sofreír tomate rallado, zanahoria y zapallito; albahaca al final.","Dorar el pollo en tiritas con pimienta y orégano, mezclar con la salsa.","Servir ¾ taza de pasta con salsa para Julián."],
     julian:"¾ taza de pasta cocida + 35 g de pollo + ensalada de colores + 1 fruta. Salsa casera sin sal ni caldos."},
   porotos:{name:"Porotos con verduras", diff:2, time:"60 min", tags:["Legumbre 2/3"],
     cat:"legumbre", fuente:"Receta de la casa · pauta 25-jun-2026",
-    ings:[["Porotos","500 g"],["Zapallo","400 g"],["Cebolla","1 un"],["Pimentón","1 un"],["Acelga o espinaca","1 atado"],["Ajo","2 dientes"],["Comino y orégano","a gusto"],["Aceite de oliva","3 cdas"]],
-    steps:["Remojar los porotos desde la noche anterior.","Cocerlos en agua nueva hasta que ablanden (45 min aprox).","Sofrito de cebolla, ajo y pimentón SIN SAL; agregar a la olla con el zapallo.","Al final sumar la acelga picada. Sazonar con comino."],
+    ings:[["Porotos","500 g"],["Zapallo","400 g"],["Cebolla","1 un"],["Pimentón","1 un"],["Acelga o espinaca","1 atado"],["Comino y orégano","a gusto"],["Aceite de oliva","3 cdas"]],
+    steps:["Remojar los porotos desde la noche anterior.","Cocerlos en agua nueva hasta que ablanden (45 min aprox).","Sofrito de cebolla y pimentón SIN SAL; agregar a la olla con el zapallo.","Al final sumar la acelga picada. Sazonar con comino."],
     julian:"1 taza de porotos con verduras + ensalada + 1 fruta. Todo sin sal."},
   merluza:{name:"Merluza al horno con puré", diff:2, time:"40 min", tags:["Pescado 1/2"],
     cat:"pescado", fuente:"Receta de la casa · pauta 25-jun-2026",
     ings:[["Filete de merluza","4 un"],["Papas","1 kg"],["Leche semidescremada","½ taza"],["Limón","2 un"],["Orégano y pimienta","a gusto"],["Aceite de oliva","2 cdas"],["Verduras p/ ensalada","variadas"]],
-    steps:["Marinar el pescado con limón, ajo y orégano (nada de sal).","Hornear 20 min a 180°C.","Puré: papas + leche semidescremada + 1 cdta aceite de oliva, sin margarina (prohibida en la pauta).","Revisar espinas antes de servir a los niños."],
+    steps:["Marinar el pescado con limón y orégano (nada de sal).","Hornear 20 min a 180°C.","Puré: papas + leche semidescremada + 1 cdta aceite de oliva, sin margarina (prohibida en la pauta).","Revisar espinas antes de servir a los niños."],
     julian:"35 g de pescado + guiso de papa (1 taza) + ensalada + 1 fruta. El puré va con leche semidescremada, nunca margarina."},
   garbanzos:{name:"Garbanzos guisados con zapallo", diff:1, time:"50 min", tags:["Legumbre 3/3"],
     cat:"legumbre", fuente:"Receta de la casa · pauta 25-jun-2026",
-    ings:[["Garbanzos","500 g"],["Zapallo camote","400 g"],["Zanahoria","2 un"],["Cebolla","1 un"],["Cúrcuma y curry suave","1 cdta"],["Ajo","2 dientes"],["Aceite de oliva","3 cdas"]],
-    steps:["Remojar los garbanzos desde la noche anterior.","Cocer hasta ablandar (45 min) en agua sin sal.","Sofrito de cebolla, ajo y zanahoria; sumar cúrcuma y curry suave.","Agregar zapallo en cubos y cocinar 15 min más."],
+    ings:[["Garbanzos","500 g"],["Zapallo camote","400 g"],["Zanahoria","2 un"],["Cebolla","1 un"],["Cúrcuma y curry suave","1 cdta"],["Aceite de oliva","3 cdas"]],
+    steps:["Remojar los garbanzos desde la noche anterior.","Cocer hasta ablandar (45 min) en agua sin sal.","Sofrito de cebolla y zanahoria; sumar cúrcuma y curry suave.","Agregar zapallo en cubos y cocinar 15 min más."],
     julian:"1 taza de garbanzos + ensalada de colores + 1 fruta. La cúrcuma y el curry están en su lista de aliños permitidos."},
   cazuela:{name:"Cazuela de pollo (sin sal)", diff:2, time:"55 min", tags:["Guiso 1/1","Pollo 2/2"],
     cat:"guiso", cats:["guiso","ave"], fuente:"Receta de la casa · pauta 25-jun-2026",
-    ings:[["Trutro de pollo sin piel","4 un"],["Papas","4 un"],["Zapallo","400 g"],["Choclo","2 trozos"],["Arroz","½ taza"],["Porotos verdes","1 taza"],["Cilantro","1 atado"],["Ajo y comino","a gusto"]],
-    steps:["Cocer el pollo SIN PIEL en agua con ajo y comino — sin sal, sin caldos concentrados.","A los 20 min agregar papas, zapallo y choclo.","Sumar arroz y porotos verdes al final (10 min).","Servir con cilantro fresco picado."],
-    julian:"1 taza de cazuela (su guiso tradicional de la semana) + 1 fruta. El caldo toma sabor del ajo, comino y cilantro."},
+    ings:[["Trutro de pollo sin piel","4 un"],["Papas","4 un"],["Zapallo","400 g"],["Choclo","2 trozos"],["Arroz","½ taza"],["Porotos verdes","1 taza"],["Cilantro","1 atado"],["Comino","a gusto"]],
+    steps:["Cocer el pollo SIN PIEL en agua con comino — sin sal, sin caldos concentrados.","A los 20 min agregar papas, zapallo y choclo.","Sumar arroz y porotos verdes al final (10 min).","Servir con cilantro fresco picado."],
+    julian:"1 taza de cazuela (su guiso tradicional de la semana) + 1 fruta. El caldo toma sabor del comino y el cilantro."},
   pescado_arroz:{name:"Pescado a la plancha con arroz", diff:1, time:"30 min", tags:["Pescado 2/2","Arroz/pasta 2/2"],
     cat:"pescado", cats:["pescado","cereal"], fuente:"Receta de la casa · pauta 25-jun-2026",
     ings:[["Filete de reineta o salmón","4 un"],["Arroz","1½ taza"],["Limón","2 un"],["Jengibre rallado","1 cdta"],["Brócoli","1 un"],["Tomate + lechuga","p/ ensalada"],["Aceite de oliva","3 cdas"]],
@@ -1831,7 +1834,7 @@ S.on(e => { if(e.tipo === "sync" || e.tipo === "error") setSync(S.estado.conecta
 function setSync(ok){
   state.synced = ok;
   const el = document.getElementById("sync");
-  if(el) el.innerHTML = (ok ? "<b>\u25cf</b> sincronizado" : "\u25cb local") + " \u00b7 v3.6b";
+  if(el) el.innerHTML = (ok ? "<b>\u25cf</b> sincronizado" : "\u25cb local") + " \u00b7 v3.8";
 }
 
 /* Respaldo. El storage es por artifact: al republicar, la URL nueva parte
@@ -2218,6 +2221,28 @@ const RATE = (() => {
 
    Orden: se sirve primero lo que vence antes. Lo vencido no se ofrece.
    ===================================================================== */
+
+/* ================= REGLA DE LA CASA: SIN AJO =================
+   Ninguna receta con ajo entra a esta casa. La guardia limpia
+   ingredientes y textos de todo lo que llegue de la base — recetas
+   viejas, nuevas, propuestas o manuales. Permanente e idempotente. */
+function sinAjo(rec){
+  if(!rec || typeof rec !== "object") return rec;
+  const limpiaTxt = s => typeof s === "string"
+    ? s.replace(/,\s*ajos?\b/gi,"").replace(/\bajos?\s+y\s+/gi,"")
+       .replace(/\s+y\s+ajos?\b/gi,"").replace(/\bcon\s+ajos?\b/gi,"con")
+       .replace(/-ajos?-/gi,"-").replace(/\bajos?\b,?\s*/gi,"")
+       .replace(/\s{2,}/g," ").replace(/\s+([,.;])/g,"$1").replace(/con\s*([,.;])/g,"$1").trim()
+    : s;
+  Object.values(rec).forEach(r=>{
+    if(!r || typeof r !== "object") return;
+    if(Array.isArray(r.ings)) r.ings = r.ings.filter(p=>!/\bajos?\b/i.test(String(p&&p[0]||"")));
+    if(Array.isArray(r.steps)) r.steps = r.steps.map(limpiaTxt);
+    ["julian","nota","name"].forEach(k=>{ if(r[k]) r[k] = limpiaTxt(r[k]); });
+  });
+  return rec;
+}
+
 const POLO = (() => {
   const K = "polo";
   const uid = () => "tnd_"+Date.now().toString(36)+"_"+Math.random().toString(36).slice(2,5);
@@ -3031,8 +3056,7 @@ function panelRemedios(){
   const prog = state.vigentes.filter(t=>!t.sos);
   const sos  = state.vigentes.filter(t=>t.sos);
   if(!prog.length && !sos.length) return panelRemediosViejo();
-  const linkDet = `<button class="med-det" data-view="remedios">detalle y SOS \u2192</button>`;
-  return medGrid() + medPickHTML() + (prog.length ? linkDet
+  return medGrid() + medPickHTML() + (prog.length ? ""
     : `<div class="empty" style="margin:0">Sin tratamientos programados. ${sos.length} SOS en la pesta\u00f1a Remedios.</div>`);
 }
 
@@ -3484,7 +3508,7 @@ function renderSemana(){
     <div class="board" id="board" style="display:grid;grid-template-columns:${plantilla};gap:10px">${cols}</div>
     <aside class="rail rail2">
       <section class="panel">
-        <h2>Remedios · hoy ${totalDosis?`<span class="soft">${dadasHoy}/${totalDosis} dosis</span>`:""}</h2>
+        <h2 style="display:flex;align-items:baseline;gap:8px">Remedios · hoy ${totalDosis?`<span class="soft">${dadasHoy}/${totalDosis} dosis</span>`:""}<button class="med-det" data-view="remedios" style="margin-left:auto;padding:0">detalle y SOS \u2192</button></h2>
         ${panelRemedios()}
       </section>
       <section class="panel">
@@ -3726,7 +3750,7 @@ function openRecipe(id){
       ${r.tags.map(t=>`<span class="pill tag">${t}</span>`).join("")}
       ${badgeRate(id)}
     </div>
-    <div class="salt"><b>Regla de la casa:</b> se cocina SIN SAL y sin caldos concentrados. Sabor permitido: ajo, cebollín, cilantro, albahaca, orégano, cúrcuma, jengibre, curry, pimienta, comino, limón.</div>
+    <div class="salt"><b>Regla de la casa:</b> se cocina SIN SAL, sin caldos concentrados y SIN AJO. Sabor permitido: cebollín, cilantro, albahaca, orégano, cúrcuma, jengibre, curry, pimienta, comino, limón.</div>
     <div class="tanda"><b>Se cocina en tanda ×${FACTOR_TANDA}: ${r.tanda} porciones</b> — las cantidades de abajo son para ${r.rinde}, así que hay que doblarlas. Se comen ${r.rinde} en el ${COMIDA.almuerzo} y las otras ${r.tanda-r.rinde} van a el Polo Norte para el ${COMIDA.cena} de otro día. Dura ${r.vidaPolo} días refrigerado${r.cat==="pescado"?" (el pescado cocido aguanta menos que un guiso)":""}.</div>
     <div class="slabel">Ingredientes</div>
     ${r.ings.map(([n,q])=>`<div class="ing">
@@ -3894,7 +3918,7 @@ async function cargarRecetario(){
   try{
     const rb = await sget("recetas:base");
     const rp = await sget("recetario");
-    Object.assign(RECETAS, rb || {}, rp || {});
+    Object.assign(RECETAS, sinAjo(rb || {}), sinAjo(rp || {}));
   }catch(e){}
   prepararRecetas();
   const m = await sget("menu:"+WEEK_KEY);
@@ -4116,10 +4140,9 @@ document.addEventListener("click",async e=>{
     await cargarClima(true);
     return;
   }
-  if(a==="ritual-cambiar"){
-    MENU_SEMANAL[Number(el.dataset.idx)] = el.value;
-    return render();
-  }
+  /* ritual-cambiar vive SOLO en el listener de change: si el click también
+     lo agarra, el render() destruye el <select> justo cuando el WebView
+     intenta abrir la lista — y el desplegable "no hace nada". */
   if(a==="ritual-guardar"){
     await guardarMenu();
     showToast(pautaOk() ? "Menú guardado ✓" : "Menú guardado — fuera de pauta");
