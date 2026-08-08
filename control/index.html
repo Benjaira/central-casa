@@ -118,7 +118,7 @@ main{padding:14px 14px 96px}
   <button id="atras" style="display:none">← Volver</button>
   <div class="h1">CONTROL DE LA CASA</div>
   <span id="estado" class="mal">○ conectando…</span>
-  <span class="build">v2.3 · 04 ago</span>
+  <span class="build">v2.4 · 07 ago</span>
 </header>
 <main id="app"><div class="vacio">Cargando…</div></main>
 <div id="barra-guardar"><button id="guardar">Guardar el menú de la semana</button></div>
@@ -144,7 +144,7 @@ main{padding:14px 14px 96px}
    ========================================================================== */
 (function (root) {
   "use strict";
-console.log("Control de la Casa · v2.3 · 04 ago");
+console.log("Control de la Casa · v2.4 · 07 ago");
 
   /* ---- Reglas de clave del storage subyacente -----------------------------
      Sin espacios, sin / \ ' " y bajo 200 caracteres. Normalizamos en vez de
@@ -844,34 +844,34 @@ function resolverProducto(texto){
 const RECETAS_BASE = {
   lentejas:{name:"Lentejas con arroz y ensalada", diff:1, time:"45 min", tags:["Legumbre 1/3"],
     cat:"legumbre", fuente:"Receta de la casa · pauta 25-jun-2026",
-    ings:[["Lentejas","500 g"],["Arroz","1 taza"],["Zanahoria","3 un"],["Cebolla","1 un"],["Zapallo","300 g"],["Ajo","2 dientes"],["Lechuga + tomate","p/ ensalada"],["Aceite de oliva","3 cdas"]],
-    steps:["Remojar las lentejas desde la noche anterior.","Sofreír cebolla, ajo y zanahoria rallada en aceite de oliva, SIN SAL.","Agregar lentejas, zapallo en cubos y agua. Cocinar 30-35 min. Sazonar con comino y orégano.","Servir 1 taza sobre ¾ taza de arroz graneado, con ensalada de colores al lado."],
-    julian:"1 taza de lentejas con verduras + ensalada + 1 cdta aceite oliva + 1 fruta. Sin sal en toda la olla — el sabor va en comino, orégano y ajo."},
+    ings:[["Lentejas","500 g"],["Arroz","1 taza"],["Zanahoria","3 un"],["Cebolla","1 un"],["Zapallo","300 g"],["Lechuga + tomate","p/ ensalada"],["Aceite de oliva","3 cdas"]],
+    steps:["Remojar las lentejas desde la noche anterior.","Sofreír cebolla y zanahoria rallada en aceite de oliva, SIN SAL.","Agregar lentejas, zapallo en cubos y agua. Cocinar 30-35 min. Sazonar con comino y orégano.","Servir 1 taza sobre ¾ taza de arroz graneado, con ensalada de colores al lado."],
+    julian:"1 taza de lentejas con verduras + ensalada + 1 cdta aceite oliva + 1 fruta. Sin sal en toda la olla — el sabor va en comino y orégano."},
   pasta_pollo:{name:"Pasta con salsa de verduras y pollo", diff:1, time:"35 min", tags:["Arroz/pasta 1/2","Pollo 1/2"],
     cat:"cereal", cats:["cereal","ave"], fuente:"Receta de la casa · pauta 25-jun-2026",
-    ings:[["Fideos (integral ideal)","400 g"],["Pechuga de pollo","400 g"],["Tomate","4 un"],["Zanahoria","2 un"],["Zapallo italiano","1 un"],["Albahaca fresca","1 atado"],["Ajo","2 dientes"],["Aceite de oliva","3 cdas"]],
-    steps:["Cocer los fideos sin sal en el agua.","Salsa: sofreír ajo, tomate rallado, zanahoria y zapallito; albahaca al final.","Dorar el pollo en tiritas con pimienta y orégano, mezclar con la salsa.","Servir ¾ taza de pasta con salsa para Julián."],
+    ings:[["Fideos (integral ideal)","400 g"],["Pechuga de pollo","400 g"],["Tomate","4 un"],["Zanahoria","2 un"],["Zapallo italiano","1 un"],["Albahaca fresca","1 atado"],["Aceite de oliva","3 cdas"]],
+    steps:["Cocer los fideos sin sal en el agua.","Salsa: sofreír tomate rallado, zanahoria y zapallito; albahaca al final.","Dorar el pollo en tiritas con pimienta y orégano, mezclar con la salsa.","Servir ¾ taza de pasta con salsa para Julián."],
     julian:"¾ taza de pasta cocida + 35 g de pollo + ensalada de colores + 1 fruta. Salsa casera sin sal ni caldos."},
   porotos:{name:"Porotos con verduras", diff:2, time:"60 min", tags:["Legumbre 2/3"],
     cat:"legumbre", fuente:"Receta de la casa · pauta 25-jun-2026",
-    ings:[["Porotos","500 g"],["Zapallo","400 g"],["Cebolla","1 un"],["Pimentón","1 un"],["Acelga o espinaca","1 atado"],["Ajo","2 dientes"],["Comino y orégano","a gusto"],["Aceite de oliva","3 cdas"]],
-    steps:["Remojar los porotos desde la noche anterior.","Cocerlos en agua nueva hasta que ablanden (45 min aprox).","Sofrito de cebolla, ajo y pimentón SIN SAL; agregar a la olla con el zapallo.","Al final sumar la acelga picada. Sazonar con comino."],
+    ings:[["Porotos","500 g"],["Zapallo","400 g"],["Cebolla","1 un"],["Pimentón","1 un"],["Acelga o espinaca","1 atado"],["Comino y orégano","a gusto"],["Aceite de oliva","3 cdas"]],
+    steps:["Remojar los porotos desde la noche anterior.","Cocerlos en agua nueva hasta que ablanden (45 min aprox).","Sofrito de cebolla y pimentón SIN SAL; agregar a la olla con el zapallo.","Al final sumar la acelga picada. Sazonar con comino."],
     julian:"1 taza de porotos con verduras + ensalada + 1 fruta. Todo sin sal."},
   merluza:{name:"Merluza al horno con puré", diff:2, time:"40 min", tags:["Pescado 1/2"],
     cat:"pescado", fuente:"Receta de la casa · pauta 25-jun-2026",
     ings:[["Filete de merluza","4 un"],["Papas","1 kg"],["Leche semidescremada","½ taza"],["Limón","2 un"],["Orégano y pimienta","a gusto"],["Aceite de oliva","2 cdas"],["Verduras p/ ensalada","variadas"]],
-    steps:["Marinar el pescado con limón, ajo y orégano (nada de sal).","Hornear 20 min a 180°C.","Puré: papas + leche semidescremada + 1 cdta aceite de oliva, sin margarina (prohibida en la pauta).","Revisar espinas antes de servir a los niños."],
+    steps:["Marinar el pescado con limón y orégano (nada de sal).","Hornear 20 min a 180°C.","Puré: papas + leche semidescremada + 1 cdta aceite de oliva, sin margarina (prohibida en la pauta).","Revisar espinas antes de servir a los niños."],
     julian:"35 g de pescado + guiso de papa (1 taza) + ensalada + 1 fruta. El puré va con leche semidescremada, nunca margarina."},
   garbanzos:{name:"Garbanzos guisados con zapallo", diff:1, time:"50 min", tags:["Legumbre 3/3"],
     cat:"legumbre", fuente:"Receta de la casa · pauta 25-jun-2026",
-    ings:[["Garbanzos","500 g"],["Zapallo camote","400 g"],["Zanahoria","2 un"],["Cebolla","1 un"],["Cúrcuma y curry suave","1 cdta"],["Ajo","2 dientes"],["Aceite de oliva","3 cdas"]],
-    steps:["Remojar los garbanzos desde la noche anterior.","Cocer hasta ablandar (45 min) en agua sin sal.","Sofrito de cebolla, ajo y zanahoria; sumar cúrcuma y curry suave.","Agregar zapallo en cubos y cocinar 15 min más."],
+    ings:[["Garbanzos","500 g"],["Zapallo camote","400 g"],["Zanahoria","2 un"],["Cebolla","1 un"],["Cúrcuma y curry suave","1 cdta"],["Aceite de oliva","3 cdas"]],
+    steps:["Remojar los garbanzos desde la noche anterior.","Cocer hasta ablandar (45 min) en agua sin sal.","Sofrito de cebolla y zanahoria; sumar cúrcuma y curry suave.","Agregar zapallo en cubos y cocinar 15 min más."],
     julian:"1 taza de garbanzos + ensalada de colores + 1 fruta. La cúrcuma y el curry están en su lista de aliños permitidos."},
   cazuela:{name:"Cazuela de pollo (sin sal)", diff:2, time:"55 min", tags:["Guiso 1/1","Pollo 2/2"],
     cat:"guiso", cats:["guiso","ave"], fuente:"Receta de la casa · pauta 25-jun-2026",
-    ings:[["Trutro de pollo sin piel","4 un"],["Papas","4 un"],["Zapallo","400 g"],["Choclo","2 trozos"],["Arroz","½ taza"],["Porotos verdes","1 taza"],["Cilantro","1 atado"],["Ajo y comino","a gusto"]],
-    steps:["Cocer el pollo SIN PIEL en agua con ajo y comino — sin sal, sin caldos concentrados.","A los 20 min agregar papas, zapallo y choclo.","Sumar arroz y porotos verdes al final (10 min).","Servir con cilantro fresco picado."],
-    julian:"1 taza de cazuela (su guiso tradicional de la semana) + 1 fruta. El caldo toma sabor del ajo, comino y cilantro."},
+    ings:[["Trutro de pollo sin piel","4 un"],["Papas","4 un"],["Zapallo","400 g"],["Choclo","2 trozos"],["Arroz","½ taza"],["Porotos verdes","1 taza"],["Cilantro","1 atado"],["Comino","a gusto"]],
+    steps:["Cocer el pollo SIN PIEL en agua con comino — sin sal, sin caldos concentrados.","A los 20 min agregar papas, zapallo y choclo.","Sumar arroz y porotos verdes al final (10 min).","Servir con cilantro fresco picado."],
+    julian:"1 taza de cazuela (su guiso tradicional de la semana) + 1 fruta. El caldo toma sabor del comino y el cilantro."},
   pescado_arroz:{name:"Pescado a la plancha con arroz", diff:1, time:"30 min", tags:["Pescado 2/2","Arroz/pasta 2/2"],
     cat:"pescado", cats:["pescado","cereal"], fuente:"Receta de la casa · pauta 25-jun-2026",
     ings:[["Filete de reineta o salmón","4 un"],["Arroz","1½ taza"],["Limón","2 un"],["Jengibre rallado","1 cdta"],["Brócoli","1 un"],["Tomate + lechuga","p/ ensalada"],["Aceite de oliva","3 cdas"]],
@@ -885,7 +885,7 @@ const MENU_POR_DEFECTO = ["lentejas","pasta_pollo","porotos","merluza","garbanzo
    ----------------------------------------------------------------------------
    18 recetas nuevas para nutrir el repertorio. Criterios:
    · TODAS hiposódicas: nada de caldos concentrados, embutidos ni salazones.
-     El sabor sale de sofritos, hierbas, limón, ajo, comino, pimentón dulce.
+     El sabor sale de sofritos, hierbas, limón, comino, pimentón dulce.
    · Ataca el hueco real de legumbres (9 apariciones en 30 pedidos, contra
      3/semana de pauta): cinco platos de legumbre nuevos para variar.
    · Pescado más allá de trucha/salmón (lo único que la casa compra hoy):
@@ -894,17 +894,39 @@ const MENU_POR_DEFECTO = ["lentejas","pasta_pollo","porotos","merluza","garbanzo
    · diff: 1 fácil · 2 media · 3 elaborada. tiempo en minutos reales.
    Los ids son nuevos: NUNCA pisan una receta existente.
    ========================================================================== */
+
+/* ================= REGLA DE LA CASA: SIN AJO =================
+   Ninguna receta con ajo entra a esta casa. La guardia limpia
+   ingredientes y textos de todo lo que llegue de la base — recetas
+   viejas, nuevas, propuestas o manuales. Permanente e idempotente. */
+function sinAjo(rec){
+  if(!rec || typeof rec !== "object") return rec;
+  const limpiaTxt = s => typeof s === "string"
+    ? s.replace(/,\s*ajos?\b/gi,"").replace(/\bajos?\s+y\s+/gi,"")
+       .replace(/\s+y\s+ajos?\b/gi,"").replace(/\bcon\s+ajos?\b/gi,"con")
+       .replace(/-ajos?-/gi,"-").replace(/\bajos?\b,?\s*/gi,"")
+       .replace(/\s{2,}/g," ").replace(/\s+([,.;])/g,"$1").replace(/con\s*([,.;])/g,"$1").trim()
+    : s;
+  Object.values(rec).forEach(r=>{
+    if(!r || typeof r !== "object") return;
+    if(Array.isArray(r.ings)) r.ings = r.ings.filter(p=>!/\bajos?\b/i.test(String(p&&p[0]||"")));
+    if(Array.isArray(r.steps)) r.steps = r.steps.map(limpiaTxt);
+    ["julian","nota","name"].forEach(k=>{ if(r[k]) r[k] = limpiaTxt(r[k]); });
+  });
+  return rec;
+}
+
 const RECETAS_EXTRA = {
   /* ---- carnes rojas (nueva categoría, tope semanal) ---- */
   carne_zanahoria:{name:"Carne guisada con zanahoria y arroz", cat:"carne", cats:["carne","cereal"],
     diff:2, time:"60 min", fuente:"Recetario Claude · ago 2026",
-    nota:"Posta o asiento en cubos, sofrito de cebolla-ajo-zanahoria, pimentón dulce."},
+    nota:"Posta o asiento en cubos, sofrito de cebolla-zanahoria, pimentón dulce."},
   pastel_papa:{name:"Pastel de papa casero", cat:"carne", cats:["carne","guiso"],
     diff:2, time:"75 min", fuente:"Recetario Claude · ago 2026",
     nota:"Carne molida con cebolla y comino; puré con leche y mantequilla sin sodio."},
   bistec_pure:{name:"Bistec a la plancha con puré y ensalada", cat:"carne", cats:["carne"],
     diff:1, time:"35 min", fuente:"Recetario Claude · ago 2026",
-    nota:"Sellado con ajo y orégano; limón al servir."},
+    nota:"Sellado con orégano; limón al servir."},
 
   /* ---- legumbres (el hueco de la casa) ---- */
   garbanzos_espinaca:{name:"Garbanzos con espinaca y huevo duro", cat:"legumbre", cats:["legumbre"],
@@ -939,12 +961,12 @@ const RECETAS_EXTRA = {
     diff:1, time:"35 min", fuente:"Recetario Claude · ago 2026"},
   pollo_limon:{name:"Pollo al horno con limón y papas", cat:"ave", cats:["ave"],
     diff:1, time:"60 min", fuente:"Recetario Claude · ago 2026",
-    nota:"Marinado en limón, ajo y romero desde la mañana."},
+    nota:"Marinado en limón y romero desde la mañana."},
 
   /* ---- cereales y guisos ---- */
   pasta_pesto:{name:"Pasta con pesto casero de albahaca", cat:"cereal", cats:["cereal"],
     diff:1, time:"30 min", fuente:"Recetario Claude · ago 2026",
-    nota:"Pesto sin queso curado: albahaca, nuez, oliva, ajo."},
+    nota:"Pesto sin queso curado: albahaca, nuez, oliva."},
   risotto_zapallo:{name:"Risotto cremoso de zapallo", cat:"cereal", cats:["cereal"],
     diff:3, time:"50 min", fuente:"Recetario Claude · ago 2026",
     nota:"Con agua de verduras hecha en casa."},
@@ -1011,7 +1033,12 @@ const esc = s => String(s==null?"":s).replace(/[&<>"']/g, c =>
 async function cargar(){
   estado.cargando = true; pintar();
   estado.semana  = claveSemana();
-  let base       = (await S.get("recetas:base", null)) || {};
+  let base       = sinAjo((await S.get("recetas:base", null)) || {});
+  /* Sanado único: si la base en Central aún trae ajo, se limpia y se
+     re-publica limpia. Después de eso, la guardia sólo vigila. */
+  if(MODO === "nube" && JSON.stringify(base) !== JSON.stringify((await S.get("recetas:base", null)) || {})){
+    try{ await S.set("recetas:base", base); }catch(e){}
+  }
   /* Siembra: si la base está vacía y hay conexión, Control la puebla él
      mismo con las recetas de fábrica (extraídas de cocina en el ensamblado).
      Antes esto dependía de "abrir Cocina en algún dispositivo" — una cadena
