@@ -118,7 +118,7 @@ main{padding:14px 14px 96px}
   <button id="atras" style="display:none">← Volver</button>
   <div class="h1">CONTROL DE LA CASA</div>
   <span id="estado" class="mal">○ conectando…</span>
-  <span class="build">v2.4 · 07 ago</span>
+  <span class="build">v2.5 · 09 ago</span>
 </header>
 <main id="app"><div class="vacio">Cargando…</div></main>
 <div id="barra-guardar"><button id="guardar">Guardar el menú de la semana</button></div>
@@ -144,7 +144,7 @@ main{padding:14px 14px 96px}
    ========================================================================== */
 (function (root) {
   "use strict";
-console.log("Control de la Casa · v2.4 · 07 ago");
+console.log("Control de la Casa · v2.5 · 09 ago");
 
   /* ---- Reglas de clave del storage subyacente -----------------------------
      Sin espacios, sin / \ ' " y bajo 200 caracteres. Normalizamos en vez de
@@ -1111,7 +1111,21 @@ async function proponer(){
   estado.proponiendo = true; pintar();
   try{
     const r = await DRV._sb.functions.invoke("casa-ia", { body: { accion: "proponer_semana" } });
-    if(r.error) throw new Error(r.error.message || "error de la función");
+    if(r.error){
+      /* La función responde errores con nombre y apellido en el cuerpo
+         ("falta ANTHROPIC_API_KEY…", "Anthropic 401: …"). supabase-js los
+         esconde tras un mensaje genérico; acá se rescatan y se muestran. */
+      let detalle = r.error.message || "error de la función";
+      const ctx = r.error.context;
+      if(ctx && typeof ctx.json === "function"){
+        try{
+          const j = await ctx.json();
+          if(j && j.error) detalle = j.error;
+        }catch(_){}
+        if(ctx.status) detalle = "[" + ctx.status + "] " + detalle;
+      }
+      throw new Error(detalle);
+    }
     const d = r.data;
     if(!d || !d.ok) throw new Error((d && d.error) || "respuesta vacía");
     /* El modelo propone; el teléfono verifica. La confianza está en pauta.js,
@@ -1122,7 +1136,7 @@ async function proponer(){
     const t = String(e.message || e);
     aviso(t.indexOf("Failed to fetch") >= 0 || t.indexOf("FunctionsFetchError") >= 0
       ? "La función casa-ia no está publicada todavía"
-      : "No se pudo proponer: " + t.slice(0, 90));
+      : "No se pudo proponer: " + t.slice(0, 180));
   }
   estado.proponiendo = false; pintar();
 }
