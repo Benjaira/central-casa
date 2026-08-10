@@ -122,7 +122,7 @@ main{padding:14px 14px 96px}
   <button id="atras" style="display:none">← Volver</button>
   <div class="h1">CONTROL DE LA CASA</div>
   <span id="estado" class="mal">○ conectando…</span>
-  <span class="build">v3.0 · 10 ago</span>
+  <span class="build">v3.1 · 10 ago</span>
 </header>
 <main id="app"><div class="vacio">Cargando…</div></main>
 <div id="barra-guardar"><button id="guardar">Guardar el menú de la semana</button></div>
@@ -148,7 +148,7 @@ main{padding:14px 14px 96px}
    ========================================================================== */
 (function (root) {
   "use strict";
-console.log("Control de la Casa · v3.0 · 10 ago");
+console.log("Control de la Casa · v3.1 · 10 ago");
 
   /* ---- Reglas de clave del storage subyacente -----------------------------
      Sin espacios, sin / \ ' " y bajo 200 caracteres. Normalizamos en vez de
@@ -1037,8 +1037,18 @@ const esc = s => String(s==null?"":s).replace(/[&<>"']/g, c =>
 async function cargar(){
   estado.cargando = true; pintar();
   estado.semana  = claveSemana();
-  try{ const _sl = await S.get("shoplist:" + iso(lunesProx()), null);
-       estado.shoplist = (_sl && _sl.items) ? _sl : null; }catch(_){ estado.shoplist = null; }
+  try{
+    const _semP = iso(lunesProx());
+    const _sl = await S.get("shoplist:" + _semP, null);
+    if(_sl && _sl.carro){ estado.shoplist = _sl; }
+    else {
+      const _mp = await S.get("menu:" + _semP, null);
+      if(Array.isArray(_mp) && _mp.length === 7){
+        estado.shoplist = Object.assign({ semana:_semP }, construirLista(_mp));
+        try{ await S.set("shoplist:" + _semP, estado.shoplist); }catch(_){}
+      } else estado.shoplist = null;
+    }
+  }catch(_){ estado.shoplist = null; }
   let base       = sinAjo((await S.get("recetas:base", null)) || {});
   /* Sanado único: si la base en Central aún trae ajo, se limpia y se
      re-publica limpia. Después de eso, la guardia sólo vigila. */
@@ -1192,27 +1202,46 @@ function fechaCortaProx(){ const d = lunesProx();
    agregados por nombre, resueltos contra el catálogo de productos de la
    casa. Las recetas sin detalle de compra quedan nombradas, no escondidas. */
 function construirLista(ids){
-  const agg = {}, sinDet = [];
+  /* El objetivo no es recordar cucharadas: es CARGAR JUMBO. Cada ingrediente
+     se traduce al producto del historial de la casa, y la frecuencia real de
+     compra decide su destino: lo habitual va AL CARRO, lo ocasional a
+     REVISAR STOCK, y lo sin producto queda A MANO. */
+  const porProd = {}, mano = {}, sinDet = [];
   ids.forEach(id => {
     const r = estado.recetas[id]; if(!r) return;
     if(!Array.isArray(r.ings) || !r.ings.length){ sinDet.push(r.name); return; }
-    r.ings.forEach(par => { const n = String(par[0]||"").trim(); if(!n) return;
-      (agg[n] = agg[n] || []).push(String(par[1]||"").trim()); });
+    r.ings.forEach(par => {
+      const ing = String(par[0]||"").trim(); if(!ing) return;
+      const rp = resolverProducto(ing);
+      if(rp && rp.prod){
+        const p = rp.prod;
+        if(!porProd[p.id]) porProd[p.id] = { id:p.id, n:p.n, c:p.c||"", f:p.f||0, un:p.q||1, precio:precioTxt(p), platos:{} };
+        porProd[p.id].platos[r.name] = 1;
+      } else { mano[ing] = 1; }
+    });
   });
-  const items = Object.keys(agg).sort((a,b)=>a.localeCompare(b)).map(n => {
-    const rp = resolverProducto(n);
-    const pr = rp && rp.prod ? rp.prod : null;
-    const m = {}; agg[n].filter(Boolean).forEach(c => m[c] = (m[c]||0) + 1);
-    const cant = Object.keys(m).map(c => m[c] > 1 ? c + " ×" + m[c] : c).join(" · ");
-    return { n, c: cant, prod: pr ? { n: pr.n, precio: precioTxt(pr) } : null };
-  });
-  return { items, sinDet };
+  const todos = Object.values(porProd).map(x =>
+    ({ n:x.n, un:x.un, precio:x.precio, platos:Object.keys(x.platos), f:x.f, c:x.c }));
+  const orden = (a,b)=>a.n.localeCompare(b.n);
+  /* Frescos que el menú pide: SIEMPRE al carro. Sólo la despensa de baja
+     frecuencia (abarrotes, conservas) queda en "revisar stock". */
+  const esDespensa = x => /abarrote|despensa|conserva|congelad/i.test(x.c||"");
+  const carro = todos.filter(x => x.f>=6 || !esDespensa(x)).sort(orden);
+  const stock = todos.filter(x => x.f<6  &&  esDespensa(x)).sort(orden);
+  const num = s => Number(String(s).replace(/[^0-9]/g,"")) || 0;
+  const totalCarro = carro.reduce((t,x)=>t+num(x.precio)*x.un, 0);
+  return { carro, stock, mano:Object.keys(mano).sort(), sinDet, totalCarro };
 }
+function fmtCLP(v){ return "$" + Number(v||0).toLocaleString("es-CL"); }
 function textoLista(){
-  const s = estado.shoplist; if(!s) return "";
-  return "LISTA JUMBO · semana del " + fechaCortaProx() + "\n"
-    + s.items.map(i => "· " + i.n + " — " + i.c + (i.prod ? "  [" + i.prod.n + "]" : "")).join("\n")
-    + (s.sinDet && s.sinDet.length ? "\n(revisar a mano: " + s.sinDet.join(", ") + ")" : "");
+  const s = estado.shoplist; if(!s || !s.carro) return "";
+  const linea = x => "· " + x.n + (x.un>1 ? " ×"+x.un : "") + " — " + x.precio;
+  let t = "PEDIDO JUMBO · semana del " + fechaCortaProx();
+  if(s.carro.length) t += "\n\nAL CARRO · " + fmtCLP(s.totalCarro) + "\n" + s.carro.map(linea).join("\n");
+  if(s.stock.length) t += "\n\nREVISAR STOCK (compra ocasional)\n" + s.stock.map(linea).join("\n");
+  if(s.mano.length)  t += "\n\nA MANO\n· " + s.mano.join(" · ");
+  if(s.sinDet && s.sinDet.length) t += "\n\n(sin ingredientes cargados: " + s.sinDet.join(", ") + ")";
+  return t;
 }
 
 function copiarViejaEscuela(texto){
@@ -1306,15 +1335,19 @@ function vistaHome(){
     + chipPauta(v)
     + '<div class="mini">Tocar la semana para editarla a mano</div></div>';
 
-  if(estado.shoplist && estado.shoplist.items && estado.shoplist.items.length){
+  if(estado.shoplist && estado.shoplist.carro){
     const s = estado.shoplist;
-    h += '<div class="tarjeta"><div class="tt">LISTA JUMBO · SEMANA DEL '
+    const fila = x => '<div class="fitem"><div class="txt">' + esc(x.n) + (x.un>1 ? ' ×'+x.un : '')
+      + ' <span class="sub">' + esc(x.precio)
+      + (x.platos && x.platos.length ? ' · para: ' + esc(x.platos.join(", ")) : '') + '</span></div></div>';
+    h += '<div class="tarjeta"><div class="tt">PEDIDO JUMBO · SEMANA DEL '
       + fechaCortaProx().toUpperCase() + '</div>'
-      + '<div class="flist">' + s.items.map(i =>
-          '<div class="fitem"><div class="txt">' + esc(i.n)
-          + ' <span class="sub">' + esc(i.c) + (i.prod ? ' · ' + esc(i.prod.n) + ' · ' + esc(i.prod.precio) : '')
-          + '</span></div></div>').join("") + '</div>'
-      + (s.sinDet && s.sinDet.length ? '<div class="mini">Revisar a mano: ' + esc(s.sinDet.join(", ")) + '</div>' : '')
+      + (s.carro.length ? '<div class="mini" style="font-weight:800">AL CARRO · ' + fmtCLP(s.totalCarro) + '</div>'
+          + '<div class="flist">' + s.carro.map(fila).join("") + '</div>' : '')
+      + (s.stock.length ? '<div class="mini" style="font-weight:800;margin-top:8px">REVISAR STOCK · compra ocasional</div>'
+          + '<div class="flist">' + s.stock.map(fila).join("") + '</div>' : '')
+      + (s.mano.length ? '<div class="mini" style="margin-top:8px"><b>A mano:</b> ' + esc(s.mano.join(" · ")) + '</div>' : '')
+      + (s.sinDet && s.sinDet.length ? '<div class="mini">Sin ingredientes cargados: ' + esc(s.sinDet.join(", ")) + '</div>' : '')
       + '<div class="botones">'
       + (navigator.share ? '<button class="primario" data-compartir-lista>Compartir</button>' : '')
       + '<button class="' + (navigator.share ? 'secundario' : 'primario') + '" data-copiar-lista>Copiar</button></div></div>';
