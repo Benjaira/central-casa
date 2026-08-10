@@ -122,7 +122,7 @@ main{padding:14px 14px 96px}
   <button id="atras" style="display:none">← Volver</button>
   <div class="h1">CONTROL DE LA CASA</div>
   <span id="estado" class="mal">○ conectando…</span>
-  <span class="build">v3.1 · 10 ago</span>
+  <span class="build">v3.2 · 10 ago</span>
 </header>
 <main id="app"><div class="vacio">Cargando…</div></main>
 <div id="barra-guardar"><button id="guardar">Guardar el menú de la semana</button></div>
@@ -148,7 +148,7 @@ main{padding:14px 14px 96px}
    ========================================================================== */
 (function (root) {
   "use strict";
-console.log("Control de la Casa · v3.1 · 10 ago");
+console.log("Control de la Casa · v3.2 · 10 ago");
 
   /* ---- Reglas de clave del storage subyacente -----------------------------
      Sin espacios, sin / \ ' " y bajo 200 caracteres. Normalizamos en vez de
@@ -1037,18 +1037,7 @@ const esc = s => String(s==null?"":s).replace(/[&<>"']/g, c =>
 async function cargar(){
   estado.cargando = true; pintar();
   estado.semana  = claveSemana();
-  try{
-    const _semP = iso(lunesProx());
-    const _sl = await S.get("shoplist:" + _semP, null);
-    if(_sl && _sl.carro){ estado.shoplist = _sl; }
-    else {
-      const _mp = await S.get("menu:" + _semP, null);
-      if(Array.isArray(_mp) && _mp.length === 7){
-        estado.shoplist = Object.assign({ semana:_semP }, construirLista(_mp));
-        try{ await S.set("shoplist:" + _semP, estado.shoplist); }catch(_){}
-      } else estado.shoplist = null;
-    }
-  }catch(_){ estado.shoplist = null; }
+  estado.shoplist = null;  /* se resuelve tras cargar recetas: ver más abajo */
   let base       = sinAjo((await S.get("recetas:base", null)) || {});
   /* Sanado único: si la base en Central aún trae ajo, se limpia y se
      re-publica limpia. Después de eso, la guardia sólo vigila. */
@@ -1082,6 +1071,27 @@ async function cargar(){
   }
   const propias  = (await S.get("recetario", null))    || {};
   estado.recetas = Object.assign({}, base, propias);
+  /* La lista de Jumbo sólo puede resolverse AQUÍ, con las recetas ya en
+     memoria. Antes corría al inicio de cargar(), construía una lista hueca
+     y la persistía pisando la buena — este orden es la cura, y la guardia
+     anti-hueca repara sola cualquier lista vacía que haya quedado guardada. */
+  try{
+    const _semP = iso(lunesProx());
+    const llena = l => l && l.carro && (l.carro.length || l.stock.length ||
+                        (l.mano && l.mano.length) || (l.sinDet && l.sinDet.length));
+    const _sl = await S.get("shoplist:" + _semP, null);
+    if(llena(_sl)){ estado.shoplist = _sl; }
+    else {
+      const _mp = await S.get("menu:" + _semP, null);
+      if(Array.isArray(_mp) && _mp.length === 7){
+        const _l = construirLista(_mp);
+        if(llena(_l)){
+          estado.shoplist = Object.assign({ semana:_semP }, _l);
+          try{ await S.set("shoplist:" + _semP, estado.shoplist); }catch(_){}
+        } else estado.shoplist = null;
+      } else estado.shoplist = null;
+    }
+  }catch(_){ estado.shoplist = null; }
   let m = await S.get("menu:" + estado.semana, null);
   if(!(Array.isArray(m) && m.length === 7) && MODO === "nube"
      && Object.keys(base).length && typeof MENU_POR_DEFECTO !== "undefined"){
