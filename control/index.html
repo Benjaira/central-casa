@@ -62,6 +62,10 @@ main{padding:14px 14px 96px}
   background:var(--tinta);color:var(--crema);padding:10px 16px;border-radius:10px;
   font:600 .82rem system-ui;transition:.22s;pointer-events:none;z-index:30;max-width:88vw;text-align:center}
 #toast.on{opacity:1;transform:translate(-50%,0)}
+/* Propuesta editable: cada día en dos pisos, el desplegable respira */
+.prop .fila{flex-direction:column;align-items:stretch;gap:7px;padding:10px 12px}
+.prop .fila .dia{min-width:0;font-size:.78rem;letter-spacing:.06em;color:#6c7078}
+.prop .fila .sel{width:100%;font-size:.95rem;padding:11px 10px;background:#fff}
 #llave{position:fixed;inset:0;z-index:999;background:var(--crema);display:flex;
   align-items:center;justify-content:center;padding:26px}
 .lv-caja{max-width:420px;width:100%;text-align:center}
@@ -118,7 +122,7 @@ main{padding:14px 14px 96px}
   <button id="atras" style="display:none">← Volver</button>
   <div class="h1">CONTROL DE LA CASA</div>
   <span id="estado" class="mal">○ conectando…</span>
-  <span class="build">v2.8 · 09 ago</span>
+  <span class="build">v2.9 · 09 ago</span>
 </header>
 <main id="app"><div class="vacio">Cargando…</div></main>
 <div id="barra-guardar"><button id="guardar">Guardar el menú de la semana</button></div>
@@ -144,7 +148,7 @@ main{padding:14px 14px 96px}
    ========================================================================== */
 (function (root) {
   "use strict";
-console.log("Control de la Casa · v2.8 · 09 ago");
+console.log("Control de la Casa · v2.9 · 09 ago");
 
   /* ---- Reglas de clave del storage subyacente -----------------------------
      Sin espacios, sin / \ ' " y bajo 200 caracteres. Normalizamos en vez de
@@ -1033,7 +1037,7 @@ const esc = s => String(s==null?"":s).replace(/[&<>"']/g, c =>
 async function cargar(){
   estado.cargando = true; pintar();
   estado.semana  = claveSemana();
-  try{ const _sl = await S.get("shoplist:" + iso(new Date(lunesDe().getTime()+7*86400000)), null);
+  try{ const _sl = await S.get("shoplist:" + iso(lunesProx()), null);
        estado.shoplist = (_sl && _sl.items) ? _sl : null; }catch(_){ estado.shoplist = null; }
   let base       = sinAjo((await S.get("recetas:base", null)) || {});
   /* Sanado único: si la base en Central aún trae ajo, se limpia y se
@@ -1158,7 +1162,7 @@ async function aprobarPropuesta(){
      hoy. Y aprobar no es sólo fijar el menú: es dejar la lista de Jumbo
      armada, resuelta contra el catálogo de la casa. */
   const p = estado.propuesta;
-  const destino = iso(new Date(lunesDe().getTime() + 7*86400000));
+  const destino = iso(lunesProx());
   const graves = p.val.errores.filter(e => e.tipo === "sodio");
   if(graves.length && !confirm("Este menú tiene " + graves.length
       + " plato(s) que rompen el régimen sin sal:\n\n"
@@ -1174,7 +1178,14 @@ async function aprobarPropuesta(){
   pintar();
 }
 
-function fechaCortaProx(){ const d = new Date(lunesDe().getTime() + 7*86400000);
+function lunesProx(){
+  /* El lunes de MAÑANA: corrido en domingo apunta a la semana que parte;
+     corrido lunes o después, a la semana en curso. Nunca dos adelante. */
+  const d = new Date(); d.setDate(d.getDate() + 1);
+  d.setDate(d.getDate() - ((d.getDay()+6)%7));
+  return d;
+}
+function fechaCortaProx(){ const d = lunesProx();
   return d.getDate() + " " + MESES[d.getMonth()]; }
 
 /* La lista de Jumbo nace del menú aprobado: ingredientes de los 7 platos,
@@ -1189,9 +1200,11 @@ function construirLista(ids){
       (agg[n] = agg[n] || []).push(String(par[1]||"").trim()); });
   });
   const items = Object.keys(agg).sort((a,b)=>a.localeCompare(b)).map(n => {
-    const pr = resolverProducto(n);
-    return { n, c: agg[n].filter(Boolean).join(" + "),
-             prod: pr ? { n: pr.n, precio: precioTxt(pr) } : null };
+    const rp = resolverProducto(n);
+    const pr = rp && rp.prod ? rp.prod : null;
+    const m = {}; agg[n].filter(Boolean).forEach(c => m[c] = (m[c]||0) + 1);
+    const cant = Object.keys(m).map(c => m[c] > 1 ? c + " ×" + m[c] : c).join(" · ");
+    return { n, c: cant, prod: pr ? { n: pr.n, precio: precioTxt(pr) } : null };
   });
   return { items, sinDet };
 }
@@ -1279,7 +1292,7 @@ function vistaHome(){
                       '<li class="e">' + esc(e.texto) + '</li>').join("") + '</ul>')
       + '<div class="mini">Cambia el plato de cualquier día antes de aprobar.</div>'
       + '<div class="botones">'
-      + '<button class="primario" data-aprobar>Aprobar para la próxima semana</button>'
+      + '<button class="primario" data-aprobar>Aprobar · semana del ' + fechaCortaProx() + '</button>'
       + '<button class="secundario" data-descartar>Descartar</button></div></div>';
   }
 
