@@ -118,7 +118,7 @@ main{padding:14px 14px 96px}
   <button id="atras" style="display:none">← Volver</button>
   <div class="h1">CONTROL DE LA CASA</div>
   <span id="estado" class="mal">○ conectando…</span>
-  <span class="build">v2.5 · 09 ago</span>
+  <span class="build">v2.6 · 09 ago</span>
 </header>
 <main id="app"><div class="vacio">Cargando…</div></main>
 <div id="barra-guardar"><button id="guardar">Guardar el menú de la semana</button></div>
@@ -144,7 +144,7 @@ main{padding:14px 14px 96px}
    ========================================================================== */
 (function (root) {
   "use strict";
-console.log("Control de la Casa · v2.5 · 09 ago");
+console.log("Control de la Casa · v2.6 · 09 ago");
 
   /* ---- Reglas de clave del storage subyacente -----------------------------
      Sin espacios, sin / \ ' " y bajo 200 caracteres. Normalizamos en vez de
@@ -1110,7 +1110,17 @@ async function proponer(){
   if(estado.proponiendo) return;
   estado.proponiendo = true; pintar();
   try{
-    const r = await DRV._sb.functions.invoke("casa-ia", { body: { accion: "proponer_semana" } });
+    /* Los tokens de sesión viven una hora y la PWA congelada en segundo
+       plano no los refresca sola: el invoke salía con credencial vencida y
+       el portero de Supabase lo rebotaba con un 401 mudo. Acá se refresca
+       la sesión y se manda el token fresco explícito, siempre. */
+    try{ await DRV._sb.auth.refreshSession(); }catch(_){}
+    const ses = await DRV._sb.auth.getSession();
+    const tok = ses && ses.data && ses.data.session && ses.data.session.access_token;
+    const r = await DRV._sb.functions.invoke("casa-ia", {
+      body: { accion: "proponer_semana" },
+      headers: tok ? { Authorization: "Bearer " + tok } : {}
+    });
     if(r.error){
       /* La función responde errores con nombre y apellido en el cuerpo
          ("falta ANTHROPIC_API_KEY…", "Anthropic 401: …"). supabase-js los
@@ -1120,7 +1130,7 @@ async function proponer(){
       if(ctx && typeof ctx.json === "function"){
         try{
           const j = await ctx.json();
-          if(j && j.error) detalle = j.error;
+          if(j) detalle = j.error || j.message || j.msg || (j.code ? String(j.code) : detalle);
         }catch(_){}
         if(ctx.status) detalle = "[" + ctx.status + "] " + detalle;
       }
