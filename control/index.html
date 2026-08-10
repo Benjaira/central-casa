@@ -122,7 +122,7 @@ main{padding:14px 14px 96px}
   <button id="atras" style="display:none">← Volver</button>
   <div class="h1">CONTROL DE LA CASA</div>
   <span id="estado" class="mal">○ conectando…</span>
-  <span class="build">v2.9 · 09 ago</span>
+  <span class="build">v3.0 · 10 ago</span>
 </header>
 <main id="app"><div class="vacio">Cargando…</div></main>
 <div id="barra-guardar"><button id="guardar">Guardar el menú de la semana</button></div>
@@ -148,7 +148,7 @@ main{padding:14px 14px 96px}
    ========================================================================== */
 (function (root) {
   "use strict";
-console.log("Control de la Casa · v2.9 · 09 ago");
+console.log("Control de la Casa · v3.0 · 10 ago");
 
   /* ---- Reglas de clave del storage subyacente -----------------------------
      Sin espacios, sin / \ ' " y bajo 200 caracteres. Normalizamos en vez de
@@ -1433,7 +1433,7 @@ document.addEventListener("change", e => {
 });
 
 document.addEventListener("click", async e => {
-  const t = e.target.closest("[data-ir],[data-proponer],[data-aprobar],[data-descartar],[data-quitar],[data-add-falta],[data-add-receta],#guardar,#atras");
+  const t = e.target.closest("[data-ir],[data-proponer],[data-aprobar],[data-descartar],[data-compartir-lista],[data-copiar-lista],[data-quitar],[data-add-falta],[data-add-receta],#guardar,#atras");
   if(!t) return;
 
   if(t.id === "atras" || t.dataset.ir === "home"){ estado.vista = "home"; return pintar(); }
@@ -1443,7 +1443,13 @@ document.addEventListener("click", async e => {
   if(t.hasAttribute("data-compartir-lista")){
     /* La hoja nativa de iOS: WhatsApp, Notas, lo que sea. En PWA instalada
        es el camino que nunca falla. */
-    try{ await navigator.share({ text: textoLista() }); }catch(_){}
+    try{ await navigator.share({ text: textoLista() }); }
+    catch(err){ if(!err || err.name !== "AbortError"){
+      let ok = false;
+      try{ await navigator.clipboard.writeText(textoLista()); ok = true; }catch(_){}
+      if(!ok) ok = copiarViejaEscuela(textoLista());
+      aviso(ok ? "No dejó compartir — la copié al portapapeles" : "El iPhone bloqueó compartir y copiar");
+    } }
     return;
   }
   if(t.hasAttribute("data-copiar-lista")){
