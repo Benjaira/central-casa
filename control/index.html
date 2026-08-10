@@ -122,7 +122,7 @@ main{padding:14px 14px 96px}
   <button id="atras" style="display:none">← Volver</button>
   <div class="h1">CONTROL DE LA CASA</div>
   <span id="estado" class="mal">○ conectando…</span>
-  <span class="build">v3.2 · 10 ago</span>
+  <span class="build">v3.3 · 10 ago</span>
 </header>
 <main id="app"><div class="vacio">Cargando…</div></main>
 <div id="barra-guardar"><button id="guardar">Guardar el menú de la semana</button></div>
@@ -148,7 +148,7 @@ main{padding:14px 14px 96px}
    ========================================================================== */
 (function (root) {
   "use strict";
-console.log("Control de la Casa · v3.2 · 10 ago");
+console.log("Control de la Casa · v3.3 · 10 ago");
 
   /* ---- Reglas de clave del storage subyacente -----------------------------
      Sin espacios, sin / \ ' " y bajo 200 caracteres. Normalizamos en vez de
@@ -1083,8 +1083,8 @@ async function cargar(){
     if(llena(_sl)){ estado.shoplist = _sl; }
     else {
       const _mp = await S.get("menu:" + _semP, null);
-      if(Array.isArray(_mp) && _mp.length === 7){
-        const _l = construirLista(_mp);
+      if(Array.isArray(_mp) && _mp.length >= 6){
+        const _l = construirLista(_mp.slice(0, 6));
         if(llena(_l)){
           estado.shoplist = Object.assign({ semana:_semP }, _l);
           try{ await S.set("shoplist:" + _semP, estado.shoplist); }catch(_){}
@@ -1166,8 +1166,12 @@ async function proponer(){
     if(!d || !d.ok) throw new Error((d && d.error) || "respuesta vacía");
     /* El modelo propone; el teléfono verifica. La confianza está en pauta.js,
        no en la promesa del modelo. */
-    estado.propuesta = { menu: d.menu, razon: d.razon,
-                         val: Pauta.validar(d.menu, estado.recetas) };
+    /* Ley de la casa: los domingos no se cocina. La propuesta vive en
+       6 días (lunes a sábado); si la función aún manda 7, el séptimo se
+       descarta acá sin drama. */
+    const menu6 = (d.menu || []).slice(0, 6);
+    estado.propuesta = { menu: menu6, razon: d.razon,
+                         val: Pauta.validar(menu6, estado.recetas) };
   }catch(e){
     const t = String(e.message || e);
     aviso(t.indexOf("Failed to fetch") >= 0 || t.indexOf("FunctionsFetchError") >= 0
@@ -1229,6 +1233,19 @@ function construirLista(ids){
         porProd[p.id].platos[r.name] = 1;
       } else { mano[ing] = 1; }
     });
+  });
+  /* Lo anotado en "Falta algo" viaja en el mismo pedido: si el resolver
+     lo reconoce, entra como producto; si no, queda a mano. El Ritual junta
+     el menú y las faltas de la semana en un solo carro. */
+  (estado.falta || []).forEach(f => {
+    const txt = String((f && (f.name || f.t)) || f || "").trim();
+    if(!txt) return;
+    const rp = resolverProducto(txt);
+    if(rp && rp.prod){
+      const p = rp.prod;
+      if(!porProd[p.id]) porProd[p.id] = { id:p.id, n:p.n, c:p.c||"", f:p.f||0, un:p.q||1, precio:precioTxt(p), platos:{} };
+      porProd[p.id].platos["Falta algo"] = 1;
+    } else { mano[txt] = 1; }
   });
   const todos = Object.values(porProd).map(x =>
     ({ n:x.n, un:x.un, precio:x.precio, platos:Object.keys(x.platos), f:x.f, c:x.c }));
