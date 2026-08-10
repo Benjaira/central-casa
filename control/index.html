@@ -118,7 +118,7 @@ main{padding:14px 14px 96px}
   <button id="atras" style="display:none">← Volver</button>
   <div class="h1">CONTROL DE LA CASA</div>
   <span id="estado" class="mal">○ conectando…</span>
-  <span class="build">v2.7 · 09 ago</span>
+  <span class="build">v2.8 · 09 ago</span>
 </header>
 <main id="app"><div class="vacio">Cargando…</div></main>
 <div id="barra-guardar"><button id="guardar">Guardar el menú de la semana</button></div>
@@ -144,7 +144,7 @@ main{padding:14px 14px 96px}
    ========================================================================== */
 (function (root) {
   "use strict";
-console.log("Control de la Casa · v2.7 · 09 ago");
+console.log("Control de la Casa · v2.8 · 09 ago");
 
   /* ---- Reglas de clave del storage subyacente -----------------------------
      Sin espacios, sin / \ ' " y bajo 200 caracteres. Normalizamos en vez de
@@ -1202,6 +1202,21 @@ function textoLista(){
     + (s.sinDet && s.sinDet.length ? "\n(revisar a mano: " + s.sinDet.join(", ") + ")" : "");
 }
 
+function copiarViejaEscuela(texto){
+  /* execCommand está "obsoleto" hace años y sigue siendo lo único que el
+     iPhone respeta sin peros dentro de una PWA. La vieja escuela funciona. */
+  try{
+    const ta = document.createElement("textarea");
+    ta.value = texto; ta.setAttribute("readonly","");
+    ta.style.position = "fixed"; ta.style.left = "-9999px"; ta.style.top = "0";
+    document.body.appendChild(ta);
+    ta.focus(); ta.select(); ta.setSelectionRange(0, texto.length);
+    const ok = document.execCommand("copy");
+    document.body.removeChild(ta);
+    return ok;
+  }catch(_){ return false; }
+}
+
 /* ----------------------------------------------------------------- pintar */
 function pintar(){
   const app = document.getElementById("app");
@@ -1287,7 +1302,9 @@ function vistaHome(){
           + ' <span class="sub">' + esc(i.c) + (i.prod ? ' · ' + esc(i.prod.n) + ' · ' + esc(i.prod.precio) : '')
           + '</span></div></div>').join("") + '</div>'
       + (s.sinDet && s.sinDet.length ? '<div class="mini">Revisar a mano: ' + esc(s.sinDet.join(", ")) + '</div>' : '')
-      + '<div class="botones"><button class="primario" data-copiar-lista>Copiar para Jumbo</button></div></div>';
+      + '<div class="botones">'
+      + (navigator.share ? '<button class="primario" data-compartir-lista>Compartir</button>' : '')
+      + '<button class="' + (navigator.share ? 'secundario' : 'primario') + '" data-copiar-lista>Copiar</button></div></div>';
   }
 
   if(!estado.propuesta)
@@ -1410,10 +1427,19 @@ document.addEventListener("click", async e => {
   if(t.dataset.ir){ estado.vista = t.dataset.ir; return pintar(); }
   if(t.hasAttribute("data-proponer")) return proponer();
   if(t.hasAttribute("data-aprobar"))  return aprobarPropuesta();
+  if(t.hasAttribute("data-compartir-lista")){
+    /* La hoja nativa de iOS: WhatsApp, Notas, lo que sea. En PWA instalada
+       es el camino que nunca falla. */
+    try{ await navigator.share({ text: textoLista() }); }catch(_){}
+    return;
+  }
   if(t.hasAttribute("data-copiar-lista")){
-    try{ await navigator.clipboard.writeText(textoLista());
-         aviso("Lista copiada · pégala en Jumbo o WhatsApp"); }
-    catch(_){ aviso("No se pudo copiar — mantén presionado el texto"); }
+    const texto = textoLista();
+    let ok = false;
+    try{ await navigator.clipboard.writeText(texto); ok = true; }catch(_){}
+    if(!ok) ok = copiarViejaEscuela(texto);
+    aviso(ok ? "Lista copiada · pégala en Jumbo o WhatsApp"
+             : "El iPhone no dejó copiar — usa Compartir");
     return;
   }
   if(t.hasAttribute("data-descartar")){ estado.propuesta = null; return pintar(); }
