@@ -118,7 +118,7 @@ main{padding:14px 14px 96px}
   <button id="atras" style="display:none">← Volver</button>
   <div class="h1">CONTROL DE LA CASA</div>
   <span id="estado" class="mal">○ conectando…</span>
-  <span class="build">v2.6 · 09 ago</span>
+  <span class="build">v2.7 · 09 ago</span>
 </header>
 <main id="app"><div class="vacio">Cargando…</div></main>
 <div id="barra-guardar"><button id="guardar">Guardar el menú de la semana</button></div>
@@ -144,7 +144,7 @@ main{padding:14px 14px 96px}
    ========================================================================== */
 (function (root) {
   "use strict";
-console.log("Control de la Casa · v2.6 · 09 ago");
+console.log("Control de la Casa · v2.7 · 09 ago");
 
   /* ---- Reglas de clave del storage subyacente -----------------------------
      Sin espacios, sin / \ ' " y bajo 200 caracteres. Normalizamos en vez de
@@ -1033,6 +1033,8 @@ const esc = s => String(s==null?"":s).replace(/[&<>"']/g, c =>
 async function cargar(){
   estado.cargando = true; pintar();
   estado.semana  = claveSemana();
+  try{ const _sl = await S.get("shoplist:" + iso(new Date(lunesDe().getTime()+7*86400000)), null);
+       estado.shoplist = (_sl && _sl.items) ? _sl : null; }catch(_){ estado.shoplist = null; }
   let base       = sinAjo((await S.get("recetas:base", null)) || {});
   /* Sanado único: si la base en Central aún trae ajo, se limpia y se
      re-publica limpia. Después de eso, la guardia sólo vigila. */
@@ -1152,11 +1154,52 @@ async function proponer(){
 }
 
 async function aprobarPropuesta(){
-  estado.menu = estado.propuesta.menu.slice();
-  estado.sucio = true;
-  const ok = await guardarMenu("claude");
-  if(ok) estado.propuesta = null;
+  /* El Ritual del domingo arma la semana que PARTE mañana, no la que muere
+     hoy. Y aprobar no es sólo fijar el menú: es dejar la lista de Jumbo
+     armada, resuelta contra el catálogo de la casa. */
+  const p = estado.propuesta;
+  const destino = iso(new Date(lunesDe().getTime() + 7*86400000));
+  const graves = p.val.errores.filter(e => e.tipo === "sodio");
+  if(graves.length && !confirm("Este menú tiene " + graves.length
+      + " plato(s) que rompen el régimen sin sal:\n\n"
+      + graves.map(e => "· " + e.texto).join("\n") + "\n\n¿Aprobar igual?")) return;
+  await S.set("menu:" + destino, p.menu);
+  const lista = construirLista(p.menu);
+  await S.set("shoplist:" + destino, lista);
+  estado.shoplist = Object.assign({ semana: destino }, lista);
+  try{ if(DRV) await DRV.anotar("menu_guardado", "control",
+        { semana: destino, menu: p.menu, origen: "claude" + (p.editada ? "+editado" : "") }); }catch(e){}
+  estado.propuesta = null;
+  aviso("Semana del " + fechaCortaProx() + " aprobada · lista Jumbo armada");
   pintar();
+}
+
+function fechaCortaProx(){ const d = new Date(lunesDe().getTime() + 7*86400000);
+  return d.getDate() + " " + MESES[d.getMonth()]; }
+
+/* La lista de Jumbo nace del menú aprobado: ingredientes de los 7 platos,
+   agregados por nombre, resueltos contra el catálogo de productos de la
+   casa. Las recetas sin detalle de compra quedan nombradas, no escondidas. */
+function construirLista(ids){
+  const agg = {}, sinDet = [];
+  ids.forEach(id => {
+    const r = estado.recetas[id]; if(!r) return;
+    if(!Array.isArray(r.ings) || !r.ings.length){ sinDet.push(r.name); return; }
+    r.ings.forEach(par => { const n = String(par[0]||"").trim(); if(!n) return;
+      (agg[n] = agg[n] || []).push(String(par[1]||"").trim()); });
+  });
+  const items = Object.keys(agg).sort((a,b)=>a.localeCompare(b)).map(n => {
+    const pr = resolverProducto(n);
+    return { n, c: agg[n].filter(Boolean).join(" + "),
+             prod: pr ? { n: pr.n, precio: precioTxt(pr) } : null };
+  });
+  return { items, sinDet };
+}
+function textoLista(){
+  const s = estado.shoplist; if(!s) return "";
+  return "LISTA JUMBO · semana del " + fechaCortaProx() + "\n"
+    + s.items.map(i => "· " + i.n + " — " + i.c + (i.prod ? "  [" + i.prod.n + "]" : "")).join("\n")
+    + (s.sinDet && s.sinDet.length ? "\n(revisar a mano: " + s.sinDet.join(", ") + ")" : "");
 }
 
 /* ----------------------------------------------------------------- pintar */
@@ -1208,17 +1251,20 @@ function vistaHome(){
 
   if(estado.propuesta){
     const p = estado.propuesta;
-    h += '<div class="tarjeta prop"><div class="tt">PROPUESTA DE CLAUDE</div>'
-      + '<div class="dias">' + p.menu.map((id,i) =>
-          '<div class="d"><span>' + DIAS[i].slice(0,3) + '</span><b>'
-          + esc(estado.recetas[id] ? estado.recetas[id].name : id) + '</b></div>').join("") + '</div>'
+    h += '<div class="tarjeta prop"><div class="tt">PROPUESTA DE CLAUDE · SEMANA DEL '
+      + fechaCortaProx().toUpperCase() + '</div>'
+      + '<div class="lista">' + p.menu.map((id,i) =>
+          '<div class="fila"><div class="dia"><b>' + DIAS[i].slice(0,3) + '</b></div>'
+          + '<select data-pdia="' + i + '" class="sel">' + opcionesAgrupadas(id)
+          + '</select></div>').join("") + '</div>'
       + (p.razon ? '<div class="razon">' + esc(p.razon) + '</div>' : "")
       + chipPauta(p.val)
       + (p.val.ok ? '<div class="pok">Verificado acá: cuadra con la pauta</div>'
                   : '<ul class="pv">' + p.val.errores.map(e =>
                       '<li class="e">' + esc(e.texto) + '</li>').join("") + '</ul>')
+      + '<div class="mini">Cambia el plato de cualquier día antes de aprobar.</div>'
       + '<div class="botones">'
-      + '<button class="primario" data-aprobar>Aprobar y mandar a la cocina</button>'
+      + '<button class="primario" data-aprobar>Aprobar para la próxima semana</button>'
       + '<button class="secundario" data-descartar>Descartar</button></div></div>';
   }
 
@@ -1231,6 +1277,18 @@ function vistaHome(){
         + '</b></div>').join("") + '</div>'
     + chipPauta(v)
     + '<div class="mini">Tocar la semana para editarla a mano</div></div>';
+
+  if(estado.shoplist && estado.shoplist.items && estado.shoplist.items.length){
+    const s = estado.shoplist;
+    h += '<div class="tarjeta"><div class="tt">LISTA JUMBO · SEMANA DEL '
+      + fechaCortaProx().toUpperCase() + '</div>'
+      + '<div class="flist">' + s.items.map(i =>
+          '<div class="fitem"><div class="txt">' + esc(i.n)
+          + ' <span class="sub">' + esc(i.c) + (i.prod ? ' · ' + esc(i.prod.n) + ' · ' + esc(i.prod.precio) : '')
+          + '</span></div></div>').join("") + '</div>'
+      + (s.sinDet && s.sinDet.length ? '<div class="mini">Revisar a mano: ' + esc(s.sinDet.join(", ")) + '</div>' : '')
+      + '<div class="botones"><button class="primario" data-copiar-lista>Copiar para Jumbo</button></div></div>';
+  }
 
   if(!estado.propuesta)
     h += '<button class="accion" data-proponer' + (estado.proponiendo ? " disabled" : "") + '>'
@@ -1327,6 +1385,12 @@ function aviso(t){
 
 /* --------------------------------------------------------------- eventos */
 document.addEventListener("change", e => {
+  if(e.target && e.target.dataset && e.target.dataset.pdia != null && estado.propuesta){
+    estado.propuesta.menu[Number(e.target.dataset.pdia)] = e.target.value;
+    estado.propuesta.editada = true;
+    estado.propuesta.val = Pauta.validar(estado.propuesta.menu, estado.recetas);
+    return pintar();
+  }
   const s = e.target.closest("select[data-idx]");
   if(!s) return;
   const i = Number(s.dataset.idx);
@@ -1346,6 +1410,12 @@ document.addEventListener("click", async e => {
   if(t.dataset.ir){ estado.vista = t.dataset.ir; return pintar(); }
   if(t.hasAttribute("data-proponer")) return proponer();
   if(t.hasAttribute("data-aprobar"))  return aprobarPropuesta();
+  if(t.hasAttribute("data-copiar-lista")){
+    try{ await navigator.clipboard.writeText(textoLista());
+         aviso("Lista copiada · pégala en Jumbo o WhatsApp"); }
+    catch(_){ aviso("No se pudo copiar — mantén presionado el texto"); }
+    return;
+  }
   if(t.hasAttribute("data-descartar")){ estado.propuesta = null; return pintar(); }
   if(t.id === "guardar") return guardarMenu("manual");
 
