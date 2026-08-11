@@ -122,7 +122,7 @@ main{padding:14px 14px 96px}
   <button id="atras" style="display:none">← Volver</button>
   <div class="h1">CONTROL DE LA CASA</div>
   <span id="estado" class="mal">○ conectando…</span>
-  <span class="build">v3.3 · 10 ago</span>
+  <span class="build">v3.4 · 11 ago</span>
 </header>
 <main id="app"><div class="vacio">Cargando…</div></main>
 <div id="barra-guardar"><button id="guardar">Guardar el menú de la semana</button></div>
@@ -148,7 +148,7 @@ main{padding:14px 14px 96px}
    ========================================================================== */
 (function (root) {
   "use strict";
-console.log("Control de la Casa · v3.3 · 10 ago");
+console.log("Control de la Casa · v3.4 · 11 ago");
 
   /* ---- Reglas de clave del storage subyacente -----------------------------
      Sin espacios, sin / \ ' " y bajo 200 caracteres. Normalizamos en vez de
@@ -816,6 +816,16 @@ const CATALOGO = [
   {id:"papelH",n:"Papel Higiénico Elite Doble Hoja Ultra Suave 50 m 18 un.",c:"Limpieza",p:15990,pF:"2026-03-28",f:1,raro:1,a:["papel higienico","papel confort","confort"]},
   {id:"servilleta",n:"Servilletas de Mesa Elite 200 un.",c:"Limpieza",p:2690,pF:"2025-12-09",f:1,raro:1,a:["servilleta","servilletas"]},
   {id:"desodor",n:"Desodorante Roll On Etiquet Pack Clásico 60 g 2 un.",c:"Limpieza",p:6190,pF:"2025-12-29",f:1,raro:1,a:["desodorante","roll on"]},
+  {id:"garbanzosP",n:"Garbanzos 500 g",c:"legumbres · despensa",f:6,a:["garbanzo","garbanzos"]},
+  {id:"merluzaF",n:"Filete de Merluza",c:"pescados",f:5,a:["merluza","filete de merluza","merluza filete"]},
+  {id:"atunAgua",n:"Atún Lomitos al Agua (lata)",c:"conservas · despensa",f:6,a:["atún al agua","atun al agua","atún en agua","atún","atun","lomitos de atún"]},
+  {id:"albahacaF",n:"Albahaca Fresca (atado)",c:"verduras",f:4,a:["albahaca","albahaca fresca"]},
+  {id:"nuecesM",n:"Nueces Mariposa 100 g",c:"frutos secos · despensa",f:6,a:["nuez","nueces","nueces mariposa"]},
+  {id:"arvejasC",n:"Arvejas Congeladas 500 g",c:"congelados",f:6,a:["arveja","arvejas","arvejitas"]},
+  {id:"trutro",n:"Trutro de Pollo Sin Piel",c:"carnes",f:5,a:["trutro","trutro de pollo","trutros","trutro sin piel"]},
+  {id:"cominoM",n:"Comino Molido",c:"especias · despensa",f:1,a:["comino","comino molido"]},
+  {id:"curcumaM",n:"Cúrcuma Molida",c:"especias · despensa",f:1,a:["cúrcuma","curcuma","cúrcuma y curry suave","curry suave"]},
+  {id:"oreganoE",n:"Orégano Entero",c:"especias · despensa",f:1,a:["orégano","oregano","orégano y pimienta"]},
 ];
 const PRODS = Object.fromEntries(CATALOGO.map(p=>[p.id,p]));
 
