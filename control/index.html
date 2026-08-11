@@ -122,7 +122,7 @@ main{padding:14px 14px 96px}
   <button id="atras" style="display:none">← Volver</button>
   <div class="h1">CONTROL DE LA CASA</div>
   <span id="estado" class="mal">○ conectando…</span>
-  <span class="build">v3.4 · 11 ago</span>
+  <span class="build">v3.5 · 11 ago</span>
 </header>
 <main id="app"><div class="vacio">Cargando…</div></main>
 <div id="barra-guardar"><button id="guardar">Guardar el menú de la semana</button></div>
@@ -148,7 +148,7 @@ main{padding:14px 14px 96px}
    ========================================================================== */
 (function (root) {
   "use strict";
-console.log("Control de la Casa · v3.4 · 11 ago");
+console.log("Control de la Casa · v3.5 · 11 ago");
 
   /* ---- Reglas de clave del storage subyacente -----------------------------
      Sin espacios, sin / \ ' " y bajo 200 caracteres. Normalizamos en vez de
@@ -826,6 +826,16 @@ const CATALOGO = [
   {id:"cominoM",n:"Comino Molido",c:"especias · despensa",f:1,a:["comino","comino molido"]},
   {id:"curcumaM",n:"Cúrcuma Molida",c:"especias · despensa",f:1,a:["cúrcuma","curcuma","cúrcuma y curry suave","curry suave"]},
   {id:"oreganoE",n:"Orégano Entero",c:"especias · despensa",f:1,a:["orégano","oregano","orégano y pimienta"]},
+  {id:"brocoli",n:"Brócoli 1 un.",c:"verduras",f:5,a:["brócoli","brocoli"]},
+  {id:"porotosT",n:"Porotos Tórtola Martini 500 g",c:"legumbres · despensa",f:5,a:["porotos","poroto","porotos tórtola","porotos hallados"]},
+  {id:"porotosV",n:"Poroto Verde Corte Francés Minuto Verde 350 g",c:"congelados",f:5,a:["porotos verdes","poroto verde","porotos verde"]},
+  {id:"chocloG",n:"Choclo Congelado en Grano 500 g",c:"congelados",f:5,a:["choclo","choclo en grano","choclo congelado","choclo desgranado"]},
+  {id:"postaNegra",n:"Posta Negra en Cubos",c:"carnes",f:4,a:["posta negra en cubos","posta negra","posta","carne en cubos"]},
+  {id:"bistecPosta",n:"Bistec de Posta",c:"carnes",f:4,a:["bistec de posta","bistec"]},
+  {id:"reinetaF",n:"Filete de Reineta",c:"pescados",f:5,a:["reineta","filete de reineta"]},
+  {id:"avenaI",n:"Avena Instantánea 1 kg",c:"cereales · despensa",f:3,a:["avena","avena instantánea"]},
+  {id:"eneldoE",n:"Eneldo",c:"especias · despensa",f:1,a:["eneldo"]},
+  {id:"romeroE",n:"Romero",c:"especias · despensa",f:1,a:["romero"]},
 ];
 const PRODS = Object.fromEntries(CATALOGO.map(p=>[p.id,p]));
 
