@@ -2032,6 +2032,7 @@ const HIST = (() => {
       for(const r of idx){
         const t = await sget("hist:tratamiento:"+r.id);
         if(!t) continue;
+        if(t.ninoId==="Dm") continue;          // demos: fuera del panel real
         if(ninoId && t.ninoId!==ninoId) continue;
         out.push(t);
       }
@@ -2832,7 +2833,7 @@ async function loadShared(){
   await cargarRecetario();               // menú y recetas: datos, no código
   await sembrarAgenda();                 // una sola vez, idempotente
   await sembrarRecetaInicial();          // una sola vez, idempotente
-  await sembrarDemo();                   // una sola vez, idempotente
+  /* sembrarDemo() retirado: la casa ya opera con recetas reales. */
   await sembrarRecetasReales();          // recetas reales de Julián · idempotente
   await HIST.migrarDosisSiCorresponde(TODAY_KEY, state.meds);
   await marcarOfrecidaHoy();             // cuenta la exposición del día, una vez
@@ -3003,7 +3004,10 @@ function render(){
 /* Las leches de las 06:30 y 18:30 son anclas reales de esta casa: el
    bicarbonato de Julián va pegado a ellas. Sin estas columnas el panel
    no tendría dónde dibujar sus casilleros. */
-const ANCLAS_MED = [["06:30","leche AM"],["08:00","desayuno"],["10:30","m. mañana"],["13:00","almuerzo"],["16:30","m. tarde"],["18:30","leche PM"],["19:30","cena"],["20:30","dormir"]];
+/* Cuatro ventanas y no más: con ocho la grilla se desbordaba y las filas
+   quedaban descuadradas en la tablet. Estas cuatro son las horas reales en
+   que esta casa da remedios; las dos leches son las que mandan. */
+const ANCLAS_MED = [["06:30","leche AM"],["13:00","almuerzo"],["18:30","leche PM"],["20:30","dormir"]];
 const CUIDADORES = ["Josefa","Maxi","Benja"];
 
 /* A falta de esquema explícito en la receta, las N dosis diarias se reparten
@@ -3012,9 +3016,9 @@ const CUIDADORES = ["Josefa","Maxi","Benja"];
 function slotsDe(t){
   if(Array.isArray(t.slots) && t.slots.length) return t.slots;
   const n = dosisPorDia(t.frecuencia) || 1;
-  return n>=4 ? ["08:00","13:00","16:30","20:30"]
-       : n===3 ? ["08:00","13:00","20:30"]
-       : n===2 ? ["08:00","20:30"] : ["08:00"];
+  return n>=4 ? ["06:30","13:00","18:30","20:30"]
+       : n===3 ? ["06:30","13:00","20:30"]
+       : n===2 ? ["06:30","18:30"] : ["06:30"];
 }
 
 function celdaMed(t, slot){
