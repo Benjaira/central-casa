@@ -1873,6 +1873,54 @@ const HOGAR = Hogar.nuevo({
 const ETIQ = Hogar.etiquetas(HOGAR);
 
 /* =====================================================================
+   RECETAS REALES · Dra. Carla Gálvez Veneros — Nefrología Pediátrica
+   Se siembran una sola vez (bandera cc:seed:recetas). El panel las deriva
+   por fecha: cuando el tratamiento vence, desaparece solo.
+   ===================================================================== */
+const RECETAS_SEED = [
+  { fecha:"2026-08-03", ninoId:"J", medico:"Dra. Carla Gálvez Veneros · Nefrología Pediátrica",
+    items:[{
+      principioActivo:"bicarbonato de sodio",
+      nombreComercial:"Bicarbonato de sodio 8,4% jarabe (magistral)",
+      forma:"jarabe", dosis:"5 mL", via:"oral", frecuencia:"cada 12 h",
+      inicio:"2026-08-03", fin:"2026-10-02", slots:["06:30","18:30"],
+      nota:"Con las leches. LLEVA SODIO Y AUN ASÍ SE DA: indicación de la nefróloga por acidosis metabólica; no es un error pese al régimen hiposódico de Julián. Frasco de 600 mL = 60 días exactos → encargar el próximo al recetario magistral el 26-sep (no se vende en farmacia)."
+    }]},
+  { fecha:"2026-08-12", ninoId:"J", medico:"Dra. Carla Gálvez Veneros · Nefrología Pediátrica",
+    items:[{
+      principioActivo:"betametasona + dexclorfeniramina",
+      nombreComercial:"Cam jarabe (Lab Chile)",
+      forma:"jarabe", dosis:"2,5 mL", via:"oral", frecuencia:"cada 12 h",
+      inicio:"2026-08-12", fin:"2026-08-15", slots:["06:30","18:30"],
+      nota:"Curso corto de 6 tomas: partió el 12 por la tarde, última el 15 en la mañana."
+    },{
+      principioActivo:"betametasona",
+      nombreComercial:"Coritex forte 1 mg/mL gotas",
+      forma:"gotas", dosis:"3 mg", via:"oral", frecuencia:"única vez",
+      inicio:"2026-08-12", fin:"2026-08-12", sos:true, nota:"Dosis única indicada en la receta."
+    },{
+      principioActivo:"paracetamol",
+      nombreComercial:"Paracetamol infantil 125 mg supositorio",
+      forma:"supositorio", dosis:"1 supositorio", via:"rectal", frecuencia:"SOS",
+      inicio:"2026-08-12", fin:null, sos:true, nota:"Solo en caso de dolor o fiebre."
+    },{
+      principioActivo:"sales de rehidratación",
+      nombreComercial:"Pedialyte 60 sabor manzana",
+      forma:"solución oral", dosis:"100 mL", via:"oral", frecuencia:"SOS",
+      inicio:"2026-08-12", fin:null, sos:true, nota:"100 mL después de cada diarrea, hasta 3 días."
+    }]}
+];
+
+async function sembrarRecetasReales(){
+  const FLAG = "hist:_seed_recetas_reales_v1";
+  try{
+    if(await sget(FLAG)) return;
+    for(const r of RECETAS_SEED) await HIST.addReceta(r);
+    sset(FLAG, {sembrado:TODAY_KEY});
+  }catch(e){ /* nunca romper el arranque por la siembra */ }
+}
+
+/* =====================================================================
    MÓDULO DE HISTORIAL — append-only, prefijo "hist:"
    hist:index             → filas livianas para listar
    hist:receta:{id}       → receta médica completa (+ imagen si se carga)
@@ -2785,6 +2833,7 @@ async function loadShared(){
   await sembrarAgenda();                 // una sola vez, idempotente
   await sembrarRecetaInicial();          // una sola vez, idempotente
   await sembrarDemo();                   // una sola vez, idempotente
+  await sembrarRecetasReales();          // recetas reales de Julián · idempotente
   await HIST.migrarDosisSiCorresponde(TODAY_KEY, state.meds);
   await marcarOfrecidaHoy();             // cuenta la exposición del día, una vez
   await registrarTandaHoy();             // deja la olla de hoy en el Polo Norte
@@ -2951,7 +3000,10 @@ function render(){
    día. Marcar pregunta QUIÉN (Josefa, Maxi o Benja): resuelve el toque
    accidental y deja el registro que un pediatra pregunta — quién, qué, hora.
    Los "si hace falta" (SOS) conservan su contador de siempre, más abajo. */
-const ANCLAS_MED = [["08:00","desayuno"],["10:30","m. mañana"],["13:00","almuerzo"],["16:30","m. tarde"],["19:30","cena"],["20:30","dormir"]];
+/* Las leches de las 06:30 y 18:30 son anclas reales de esta casa: el
+   bicarbonato de Julián va pegado a ellas. Sin estas columnas el panel
+   no tendría dónde dibujar sus casilleros. */
+const ANCLAS_MED = [["06:30","leche AM"],["08:00","desayuno"],["10:30","m. mañana"],["13:00","almuerzo"],["16:30","m. tarde"],["18:30","leche PM"],["19:30","cena"],["20:30","dormir"]];
 const CUIDADORES = ["Josefa","Maxi","Benja"];
 
 /* A falta de esquema explícito en la receta, las N dosis diarias se reparten
