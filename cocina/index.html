@@ -871,8 +871,11 @@ input,textarea{-webkit-user-select:text;user-select:text}
 .pl-item{color:var(--ink)} .pl-item b{font-weight:700}
 .pl-hoy{background:#F0A834;color:#412402;border-radius:4px;padding:0 5px;font-weight:700}
 .pl-dot{color:var(--line-strong)} .pl-vacio{color:var(--ink-soft)}
-.medgrid{display:grid;grid-template-columns:minmax(190px,1.6fr) repeat(4,minmax(0,1fr));
-  gap:6px;align-items:center;margin-top:4px}
+/* Cada fila (.mline) es su PROPIA grilla con sus columnas. Así ninguna regla
+   heredada puede volver a barajar las celdas: la fila entera vive o muere junta. */
+.medgrid{display:flex;flex-direction:column;gap:5px;margin-top:4px}
+.mline{display:grid;grid-template-columns:minmax(190px,1.6fr) repeat(4,minmax(0,1fr));
+  gap:6px;align-items:center}
 .mhh{font-family:"Space Mono",monospace;font-size:.56rem;color:var(--ink-soft);
   letter-spacing:.04em;line-height:1;margin-bottom:1px}
 .mcell.dada .mhh{color:var(--ok)}
@@ -954,7 +957,7 @@ header{display:flex;justify-content:space-between;align-items:flex-start;gap:18p
   text-transform:uppercase;color:var(--ink-soft);margin-bottom:6px}
 .snrow{display:flex;align-items:baseline;gap:8px;font-size:.78rem;padding-bottom:4px}
 .mcell{min-height:var(--mh,2.2rem)}
-.medgrid{grid-template-columns:minmax(118px,1fr) repeat(6,minmax(0,1fr));gap:4px}
+.mline{grid-template-columns:minmax(150px,1.3fr) repeat(4,minmax(0,1fr));gap:4px}
 
 /* ---- v2.8 · correcciones medidas en render real ---- */
 /* Los futuros son spans dentro de un botón: el espacio en blanco del HTML
@@ -1845,7 +1848,7 @@ S.on(e => { if(e.tipo === "sync" || e.tipo === "error") setSync(S.estado.conecta
 function setSync(ok){
   state.synced = ok;
   const el = document.getElementById("sync");
-  if(el) el.innerHTML = (ok ? "<b>\u25cf</b> sincronizado" : "\u25cb local") + " \u00b7 v4.3";
+  if(el) el.innerHTML = (ok ? "<b>\u25cf</b> sincronizado" : "\u25cb local") + " \u00b7 v4.4";
 }
 
 /* Respaldo. El storage es por artifact: al republicar, la URL nueva parte
@@ -2596,30 +2599,32 @@ async function cargarClima(pedirIA){
   if(!pedirIA) return;
   if(climaFresco(c1) && climaFresco(c2)) return;   // ya está fresco, no molestar a la IA
   try{
-    const r = await fetch("https://api.anthropic.com/v1/messages",{
-      method:"POST", headers:{"Content-Type":"application/json"},
-      body: JSON.stringify({
-        model:"claude-sonnet-4-6", max_tokens:1000,
-        tools:[{type:"web_search_20250305", name:"web_search"}],
-        messages:[{role:"user", content:
-          `Busca el pronóstico por hora en ${CLIMA_LUGAR} para hoy ${TODAY_KEY} y mañana ${MANANA_KEY}. `+
-          `Responde SOLO un arreglo JSON, sin texto ni markdown, con 10 objetos: `+
-          `5 para hoy y 5 para mañana, en las horas locales 08, 11, 14, 17 y 20, con esta forma: `+
-          `[{"dia":"hoy","h":"08","icon":"sol","t":9},{"dia":"manana","h":"08","icon":"lluvia_leve","t":7}]. `+
-          `El campo icon debe ser uno de: sol, nubes_pocas, nubes_muchas, lluvia_leve, lluvia_fuerte. `+
-          `El campo t es la temperatura en grados Celsius, número entero.`}]
-      })
+    /* Open-Meteo: pronóstico real, sin llave. La versión anterior llamaba a la
+       API de la IA, que fuera de claude.ai responde 401: por eso la pantalla
+       vivía eternamente en el clima típico del mes sin que nadie lo notara. */
+    const r = await fetch("https://api.open-meteo.com/v1/forecast"
+      + "?latitude=-33.3915&longitude=-70.575"
+      + "&hourly=temperature_2m,weather_code&timezone=America%2FSantiago&forecast_days=2");
+    const d = await r.json();
+    const horas = (d.hourly && d.hourly.time) || [];
+    const temps = (d.hourly && d.hourly.temperature_2m) || [];
+    const codes = (d.hourly && d.hourly.weather_code) || [];
+    const iconoWMO = w =>
+        w<=1 ? "sol"
+      : w===2 ? "nubes_pocas"
+      : (w===3||w===45||w===48) ? "nubes_muchas"
+      : ((w>=51&&w<=61)||w===80) ? "lluvia_leve"
+      : "lluvia_fuerte";
+    const toma = fecha => ["08","11","14","17","20"].map(hh=>{
+      const i = horas.indexOf(fecha+"T"+hh+":00");
+      return i<0 ? {h:hh, icon:null, t:null}
+                 : {h:hh, icon:iconoWMO(codes[i]), t:Math.round(temps[i])};
     });
-    const data = await r.json();
-    const txt = (data.content||[]).filter(x=>x.type==="text").map(x=>x.text).join("\n");
-    const limpio = txt.replace(/```json|```/g,"").trim();
-    const arr = JSON.parse(limpio.slice(limpio.indexOf("["), limpio.lastIndexOf("]")+1));
-    if(Array.isArray(arr) && arr.length){
-      const hoy = arr.filter(x=>x.dia!=="manana").slice(0,5);
-      const man = arr.filter(x=>x.dia==="manana").slice(0,5);
+    const hoy = toma(TODAY_KEY), man = toma(MANANA_KEY);
+    if(hoy.some(x=>x.t!=null)){
       const ts = Date.now();
-      if(hoy.length){ state.clima.hoy = hoy; sset("clima:"+TODAY_KEY, {v:hoy, ts}); }
-      if(man.length){ state.clima.manana = man; sset("clima:"+MANANA_KEY, {v:man, ts}); }
+      state.clima.hoy = hoy;    sset("clima:"+TODAY_KEY,  {v:hoy, ts});
+      state.clima.manana = man; sset("clima:"+MANANA_KEY, {v:man, ts});
       pintarClima();
     }
   }catch(e){ showToast("No pude actualizar el clima"); }
@@ -3072,11 +3077,11 @@ function filaMed(t){
   const kid = t.ninoId || "J";
   const quedan = t.fin ? diasEntre(TODAY_KEY, t.fin) : null;
   const cola = (quedan!==null && quedan<=2) ? ` · <b style="color:var(--due)">${quedan===0?"último día":"quedan "+quedan+" días"}</b>` : (!t.fin?" · permanente":"");
-  return `<div class="mrow-label"><span class="kdot ${kid}"></span><span class="mnom">${esc(t.nombreComercial||t.principioActivo)}<span class="mdet">${esc(t.dosis||"")}${cola}</span></span></div>`
+  return `<div class="mline"><div class="mrow-label"><span class="kdot ${kid}"></span><span class="mnom">${esc(t.nombreComercial||t.principioActivo)}<span class="mdet">${esc(t.dosis||"")}${cola}</span></span></div>`
     + VENTANAS_MED.map(([v]) => {
         const real = slots.find(s => ventanaDe(s) === v);
         return real ? celdaMed(t, real, true) : `<div class="mcell off"></div>`;
-      }).join("");
+      }).join("") + `</div>`;
 }
 
 /* ---- Fila de tratamiento con contador de dosis (queda para los SOS) ---- */
@@ -3133,7 +3138,7 @@ function medGrid(){
   if(!prog.length) return "";
   const d = densidadMed(prog.length);
   return `<div class="medgrid" style="--mh:${d.h};--mf:${d.f};--mq:${d.q};--mho:${d.ho};--mg:${d.mg};--mqd:${d.qd||"flex"};--mdd:${d.dd||"block"};--mnw:${d.nw||"normal"};gap:${d.g}">
-      <div></div>${VENTANAS_MED.map(([a,l])=>`<div class="mhora" title="ventana ${l}">${l}</div>`).join("")}
+      <div class="mline"><div></div>${VENTANAS_MED.map(([a,l])=>`<div class="mhora" title="ventana ${l}">${l}</div>`).join("")}</div>
       ${prog.map(filaMed).join("")}
     </div>`;
 }
