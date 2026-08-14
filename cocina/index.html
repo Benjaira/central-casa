@@ -195,7 +195,15 @@
   --r:14px;
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-body{font-family:"Archivo",system-ui,sans-serif;background:var(--paper);color:var(--ink);min-height:100vh;padding-bottom:90px}
+/* Kiosco: la app se enmarca EXACTO en el vidrio y nunca empuja hacia abajo.
+   Antes min-height:100vh + padding-bottom:90px hacían la página más alta que
+   la pantalla y el panel de remedios quedaba cortado. Ahora la altura la
+   manda la pantalla y sólo las zonas internas se desplazan. */
+html,body{height:100%;overflow:hidden}
+body{font-family:"Archivo",system-ui,sans-serif;background:var(--paper);color:var(--ink);
+  height:100dvh;max-height:100dvh;display:flex;flex-direction:column;overflow:hidden;padding-bottom:0}
+main{flex:1 1 auto;min-height:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch}
+header{flex:0 0 auto}
 .mono{font-family:"Space Mono",monospace}
 button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
 button:focus-visible,input:focus-visible{outline:3px solid var(--colD);outline-offset:2px;border-radius:6px}
@@ -249,13 +257,13 @@ main{padding:22px 24px;max-width:1880px;margin:0 auto}
    carrusel, para que el menú del día no quede fuera de la vista. */
 @media (min-width:900px) and (max-height:820px){
   .rail{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;gap:12px;padding-bottom:4px}
-  .rail > *{flex:0 0 300px;scroll-snap-align:start;max-height:calc(100vh - 500px);
+  .rail > *{flex:0 0 300px;scroll-snap-align:start;max-height:calc(100dvh - 500px);
     min-height:180px;overflow-y:auto}
 }
 /* El tablero nunca empuja el ancho de la página */
 .board{max-width:100%}
 .board-wrap{min-width:0}
-main{overflow-x:hidden}
+main{overflow-x:hidden}  /* alto y desplazamiento: ver el bloque de kiosco */
 @media(min-width:900px) and (max-width:1349px){
   main{padding:14px 16px}
   .board{gap:8px}
@@ -805,7 +813,7 @@ main{overflow-x:hidden}
   .rail > *{
     flex:0 0 292px;
     scroll-snap-align:start;
-    max-height:calc(100vh - 512px);
+    max-height:calc(100dvh - 512px);
     min-height:236px;
     overflow-y:auto;
     -webkit-overflow-scrolling:touch;
@@ -818,7 +826,7 @@ main{overflow-x:hidden}
   /* El Ritual y el Ranking son pantallas de trabajo: el menú entero visible
      a la izquierda y el resto en su propia columna con desplazamiento. */
   .ri-grid{grid-template-columns:1.15fr .85fr;gap:12px;
-    max-height:calc(100vh - 175px);align-items:stretch}
+    max-height:calc(100dvh - 175px);align-items:stretch}
   .ri-grid > .panel{overflow-y:auto}
   .ri-grid + .panel{max-height:190px;overflow-y:auto;margin-top:10px}
 
@@ -2569,6 +2577,15 @@ function climaTipico(fecha){
   }));
 }
 
+/* El clima guardado caduca a las 6 horas: un pronóstico pedido en la mañana
+   ya no describe la tarde. Sin esto la pantalla mostraba el promedio histórico
+   del mes para siempre y nadie notaba que nunca se actualizaba. */
+const CLIMA_TTL_MS = 6*60*60*1000;
+function climaFresco(c){
+  if(!c || !c.v) return false;
+  if(!c.ts) return false;                      // guardado por una versión vieja
+  return (Date.now() - c.ts) < CLIMA_TTL_MS;
+}
 async function cargarClima(pedirIA){
   const [c1,c2] = await Promise.all([sget("clima:"+TODAY_KEY), sget("clima:"+MANANA_KEY)]);
   state.clima = {
@@ -2577,7 +2594,7 @@ async function cargarClima(pedirIA){
   };
   pintarClima();
   if(!pedirIA) return;
-  if(c1 && c1.v && c2 && c2.v) return;
+  if(climaFresco(c1) && climaFresco(c2)) return;   // ya está fresco, no molestar a la IA
   try{
     const r = await fetch("https://api.anthropic.com/v1/messages",{
       method:"POST", headers:{"Content-Type":"application/json"},
@@ -2600,8 +2617,9 @@ async function cargarClima(pedirIA){
     if(Array.isArray(arr) && arr.length){
       const hoy = arr.filter(x=>x.dia!=="manana").slice(0,5);
       const man = arr.filter(x=>x.dia==="manana").slice(0,5);
-      if(hoy.length){ state.clima.hoy = hoy; sset("clima:"+TODAY_KEY, {v:hoy}); }
-      if(man.length){ state.clima.manana = man; sset("clima:"+MANANA_KEY, {v:man}); }
+      const ts = Date.now();
+      if(hoy.length){ state.clima.hoy = hoy; sset("clima:"+TODAY_KEY, {v:hoy, ts}); }
+      if(man.length){ state.clima.manana = man; sset("clima:"+MANANA_KEY, {v:man, ts}); }
       pintarClima();
     }
   }catch(e){ showToast("No pude actualizar el clima"); }
@@ -2808,6 +2826,9 @@ function tick(){
     const cruzo = (_ultimaHora < HORA_VALORAR) && (d.getHours() >= HORA_VALORAR);
     _ultimaHora = d.getHours();
     if(cruzo && state.view==="semana") render();
+    /* Cada cambio de hora se revisa el clima; cargarClima sale solo si el
+       dato guardado sigue fresco, así que esto no dispara llamadas de más. */
+    cargarClima(true).catch(()=>{});
   }
   $("#ct").textContent=d.toLocaleTimeString("es-CL",{hour:"2-digit",minute:"2-digit"});
   $("#cd").textContent=d.toLocaleDateString("es-CL",{weekday:"short",day:"numeric",month:"short"});
@@ -2841,7 +2862,7 @@ async function loadShared(){
   await HIST.migrarDosisSiCorresponde(TODAY_KEY, state.meds);
   await marcarOfrecidaHoy();             // cuenta la exposición del día, una vez
   await registrarTandaHoy();             // deja la olla de hoy en el Polo Norte
-  await cargarClima(false);              // sólo lo guardado; no llama a la IA
+  await cargarClima(true);               // busca de verdad si falta el dato del día
   await refrescarHistorial();
   render();
 }
