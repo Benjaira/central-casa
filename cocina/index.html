@@ -863,8 +863,11 @@ input,textarea{-webkit-user-select:text;user-select:text}
 .pl-item{color:var(--ink)} .pl-item b{font-weight:700}
 .pl-hoy{background:#F0A834;color:#412402;border-radius:4px;padding:0 5px;font-weight:700}
 .pl-dot{color:var(--line-strong)} .pl-vacio{color:var(--ink-soft)}
-.medgrid{display:grid;grid-template-columns:minmax(132px,1.15fr) repeat(6,minmax(0,1fr));
-  gap:5px;align-items:center;margin-top:4px}
+.medgrid{display:grid;grid-template-columns:minmax(190px,1.6fr) repeat(4,minmax(0,1fr));
+  gap:6px;align-items:center;margin-top:4px}
+.mhh{font-family:"Space Mono",monospace;font-size:.56rem;color:var(--ink-soft);
+  letter-spacing:.04em;line-height:1;margin-bottom:1px}
+.mcell.dada .mhh{color:var(--ok)}
 .mhora{text-align:center;font-family:"Space Mono",monospace;font-size:var(--mho,.6rem);
   color:var(--ink-soft);white-space:nowrap;overflow:hidden}
 .mrow-label{display:flex;align-items:center;gap:7px;min-width:0}
@@ -3004,10 +3007,21 @@ function render(){
 /* Las leches de las 06:30 y 18:30 son anclas reales de esta casa: el
    bicarbonato de Julián va pegado a ellas. Sin estas columnas el panel
    no tendría dónde dibujar sus casilleros. */
-/* Cuatro ventanas y no más: con ocho la grilla se desbordaba y las filas
-   quedaban descuadradas en la tablet. Estas cuatro son las horas reales en
-   que esta casa da remedios; las dos leches son las que mandan. */
-const ANCLAS_MED = [["06:30","leche AM"],["13:00","almuerzo"],["18:30","leche PM"],["20:30","dormir"]];
+/* Cuatro columnas de tres horas, de 07 a 19: son ventanas, no relojes.
+   Una dosis cae en la ventana que la contiene y la casilla muestra su HORA
+   REAL — el bicarbonato de las 06:30 se dibuja en la primera columna pero
+   sigue diciendo 06:30, que es lo que hay que respetar. */
+const VENTANAS_MED = [["07:00","07–10"],["10:00","10–13"],["13:00","13–16"],["16:00","16–19"]];
+const ANCLAS_MED = VENTANAS_MED;
+/* A qué columna pertenece una hora concreta (antes de las 10 → primera;
+   desde las 16 → última, para que las tomas de tarde-noche no se pierdan). */
+function ventanaDe(hhmm){
+  const m = Number(String(hhmm).slice(0,2)) + Number(String(hhmm).slice(3))/60;
+  if(m < 10) return "07:00";
+  if(m < 13) return "10:00";
+  if(m < 16) return "13:00";
+  return "16:00";
+}
 const CUIDADORES = ["Josefa","Maxi","Benja"];
 
 /* A falta de esquema explícito en la receta, las N dosis diarias se reparten
@@ -3016,19 +3030,20 @@ const CUIDADORES = ["Josefa","Maxi","Benja"];
 function slotsDe(t){
   if(Array.isArray(t.slots) && t.slots.length) return t.slots;
   const n = dosisPorDia(t.frecuencia) || 1;
-  return n>=4 ? ["06:30","13:00","18:30","20:30"]
-       : n===3 ? ["06:30","13:00","20:30"]
-       : n===2 ? ["06:30","18:30"] : ["06:30"];
+  return n>=4 ? ["07:00","11:00","15:00","18:30"]
+       : n===3 ? ["07:00","13:00","18:30"]
+       : n===2 ? ["06:30","18:30"] : ["07:00"];
 }
 
-function celdaMed(t, slot){
+function celdaMed(t, slot, conHora){
   const marca = (state.meds2||{})[t.id+"|"+slot];
+  const hh = conHora ? `<span class="mhh">${esc(slot)}</span>` : "";
   if(marca) return `<button class="mcell dada" data-action="dose-off" data-id="${t.id}" data-slot="${slot}">
-      <span class="mck">\u2713</span><span class="mquien">${esc(marca.por)} ${esc(marca.t||"")}</span></button>`;
+      ${hh}<span class="mck">\u2713</span><span class="mquien">${esc(marca.por)} ${esc(marca.t||"")}</span></button>`;
   const H = new Date().getHours()+new Date().getMinutes()/60;
   const sh = Number(slot.slice(0,2))+Number(slot.slice(3))/60;
   const activa = Math.abs(sh-H) <= 1.5;
-  return `<button class="mcell ${activa?"activa":""}" data-action="dose-slot" data-id="${t.id}" data-slot="${slot}">\u25cb</button>`;
+  return `<button class="mcell ${activa?"activa":""}" data-action="dose-slot" data-id="${t.id}" data-slot="${slot}">${hh}<span class="mo">\u25cb</span></button>`;
 }
 
 function filaMed(t){
@@ -3037,7 +3052,10 @@ function filaMed(t){
   const quedan = t.fin ? diasEntre(TODAY_KEY, t.fin) : null;
   const cola = (quedan!==null && quedan<=2) ? ` · <b style="color:var(--due)">${quedan===0?"último día":"quedan "+quedan+" días"}</b>` : (!t.fin?" · permanente":"");
   return `<div class="mrow-label"><span class="kdot ${kid}"></span><span class="mnom">${esc(t.nombreComercial||t.principioActivo)}<span class="mdet">${esc(t.dosis||"")}${cola}</span></span></div>`
-    + ANCLAS_MED.map(([a])=> slots.includes(a) ? celdaMed(t,a) : `<div class="mcell off"></div>`).join("");
+    + VENTANAS_MED.map(([v]) => {
+        const real = slots.find(s => ventanaDe(s) === v);
+        return real ? celdaMed(t, real, true) : `<div class="mcell off"></div>`;
+      }).join("");
 }
 
 /* ---- Fila de tratamiento con contador de dosis (queda para los SOS) ---- */
@@ -3094,7 +3112,7 @@ function medGrid(){
   if(!prog.length) return "";
   const d = densidadMed(prog.length);
   return `<div class="medgrid" style="--mh:${d.h};--mf:${d.f};--mq:${d.q};--mho:${d.ho};--mg:${d.mg};--mqd:${d.qd||"flex"};--mdd:${d.dd||"block"};--mnw:${d.nw||"normal"};gap:${d.g}">
-      <div></div>${ANCLAS_MED.map(([a,l])=>`<div class="mhora" title="${l}">${a}</div>`).join("")}
+      <div></div>${VENTANAS_MED.map(([a,l])=>`<div class="mhora" title="ventana ${l}">${l}</div>`).join("")}
       ${prog.map(filaMed).join("")}
     </div>`;
 }
