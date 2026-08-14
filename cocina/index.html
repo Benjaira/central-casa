@@ -1845,7 +1845,7 @@ S.on(e => { if(e.tipo === "sync" || e.tipo === "error") setSync(S.estado.conecta
 function setSync(ok){
   state.synced = ok;
   const el = document.getElementById("sync");
-  if(el) el.innerHTML = (ok ? "<b>\u25cf</b> sincronizado" : "\u25cb local") + " \u00b7 v3.8";
+  if(el) el.innerHTML = (ok ? "<b>\u25cf</b> sincronizado" : "\u25cb local") + " \u00b7 v4.3";
 }
 
 /* Respaldo. El storage es por artifact: al republicar, la URL nueva parte
