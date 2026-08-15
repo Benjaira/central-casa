@@ -1849,7 +1849,7 @@ S.on(e => { if(e.tipo === "sync" || e.tipo === "error") setSync(S.estado.conecta
 function setSync(ok){
   state.synced = ok;
   const el = document.getElementById("sync");
-  if(el) el.innerHTML = (ok ? "<b>\u25cf</b> sincronizado" : "\u25cb local") + " \u00b7 v4.5";
+  if(el) el.innerHTML = (ok ? "<b>\u25cf</b> sincronizado" : "\u25cb local") + " \u00b7 v4.7";
 }
 
 /* Respaldo. El storage es por artifact: al republicar, la URL nueva parte
@@ -2847,6 +2847,28 @@ $("#week-label").textContent = "Semana del " + monday.toLocaleDateString("es-CL"
    VERIFICA releyendo con caché limpio, reintenta 3 veces con espera, y si
    aun así falla queda en cola (30 s) con aviso visible. Una marca de dosis
    no puede perderse en silencio: es la línea roja de este panel.          */
+/* Espejo local del día en localStorage: la marca se escribe AQUÍ primero.
+   Un reload de Fully, un corte de wifi o una sesión vencida de la nube no
+   pueden borrarla: la nube es sincronización, el dispositivo es la verdad. */
+function _espejoKey(){ return "cc-espejo:meds2:"+TODAY_KEY; }
+function claveDosis(t, slot){
+  const base = (t && (t.principioActivo || t.nombreComercial)) || (t && t.id) || "?";
+  return "pa:" + normalizar(String(base)).replace(/\s+/g,"_") + "|" + slot;
+}
+function marcaDe(t, slot){
+  const m = state.meds2 || {};
+  const v = m[claveDosis(t,slot)];
+  if(v !== undefined) return v;
+  return m[t.id + "|" + slot];      // compatibilidad con marcas ya hechas
+}
+function espejoGuardar(){
+  try{ localStorage.setItem(_espejoKey(), JSON.stringify(state.meds2||{})); }catch(e){}
+}
+function espejoLeer(){
+  try{ return JSON.parse(localStorage.getItem(_espejoKey())||"{}"); }catch(e){ return {}; }
+}
+let _medBitacora = { ultOk:null, ultErr:null, msg:"" };
+
 let _gm2Timer = null;
 async function guardarMeds2(){
   const llave = "meds2:"+TODAY_KEY;
@@ -2862,11 +2884,18 @@ async function guardarMeds2(){
         JSON.stringify(state.meds2[x] === undefined ? 0 : state.meds2[x]));
       if(ok){
         state.meds2 = fusion;
+        espejoGuardar();
+        _medBitacora.ultOk = new Date().toLocaleTimeString("es-CL",{hour:"2-digit",minute:"2-digit"});
+        _medBitacora.msg = "";
         if(state.medsSinGuardar){ state.medsSinGuardar = false; render(); }
         if(_gm2Timer){ clearTimeout(_gm2Timer); _gm2Timer = null; }
         return true;
       }
-    }catch(e){}
+      _medBitacora.msg = "eco sin confirmar";
+    }catch(e){
+      _medBitacora.ultErr = new Date().toLocaleTimeString("es-CL",{hour:"2-digit",minute:"2-digit"});
+      _medBitacora.msg = String(e && (e.message||e)).slice(0,80);
+    }
     await new Promise(r=>setTimeout(r, 800*(i+1)));
   }
   if(!state.medsSinGuardar){ state.medsSinGuardar = true; render(); }
@@ -2886,7 +2915,7 @@ async function loadShared(){
      servidor (tiempo real, clima guardándose, otro dispositivo) jamás debe
      pisarlas. Se fusiona con lo local ganando; el desmarcar sobrevive
      porque dose-off deja un 0 (lápida) en vez de borrar la llave. */
-  if(m2) state.meds2 = Object.assign({}, m2, state.meds2);
+  state.meds2 = Object.assign({}, m2||{}, espejoLeer(), state.meds2);
   if(f) state.falta = f;
   if(s) state.shopGot = s;
   state.events = e || {};
@@ -3099,9 +3128,9 @@ function slotsDe(t){
 }
 
 function celdaMed(t, slot, conHora){
-  const marca = (state.meds2||{})[t.id+"|"+slot];
+  const marca = marcaDe(t, slot);
   const hh = conHora ? `<span class="mhh">${esc(slot)}</span>` : "";
-  if(marca) return `<button class="mcell dada" data-action="dose-off" data-id="${t.id}" data-slot="${slot}">
+  if(marca) return `<button class="mcell dada" data-action="dose-off" data-id="${t.id}" data-k="${claveDosis(t,slot)}" data-slot="${slot}">
       ${hh}<span class="mck">\u2713</span><span class="mquien">${esc(marca.por)} ${esc(marca.t||"")}</span></button>`;
   const H = new Date().getHours()+new Date().getMinutes()/60;
   const sh = Number(slot.slice(0,2))+Number(slot.slice(3))/60;
@@ -3204,6 +3233,12 @@ function renderRemedios(){
     <h2>Remedios \u00b7 hoy</h2>
     ${medGrid()} ${medPickHTML()}
     ${sos.length ? `<div class="tsec">Si hace falta</div>` + sos.map(tratRow).join("") : ""}
+    <div style="margin-top:10px;font-family:'Space Mono',monospace;font-size:.58rem;color:var(--ink-soft);border-top:1px dashed var(--linea,#ddd);padding-top:6px">
+      sync ${MODO} \u00b7 marcas hoy: ${Object.values(state.meds2||{}).filter(Boolean).length}
+      \u00b7 espejo: ${Object.values(espejoLeer()).filter(Boolean).length}
+      \u00b7 nube ok: ${_medBitacora.ultOk||"\u2014"}
+      ${_medBitacora.ultErr?`\u00b7 <span style="color:#b3261e">error ${_medBitacora.ultErr}: ${esc(_medBitacora.msg)}</span>`:""}
+    </div>
     ${panelRemediosResto()}
   </section></div>`;
 }
@@ -3631,7 +3666,8 @@ function renderSemana(){
     + futIdx.map(colFuture).join("");
 
   const totalDosis = state.vigentes.reduce((a,t)=>a+(dosisPorDia(t.frecuencia)&&!t.sos?dosisPorDia(t.frecuencia):0),0);
-  const dadasHoy   = state.vigentes.filter(t=>!t.sos).reduce((a,t)=>a+(state.meds[t.id]||0),0);
+  const dadasHoy   = state.vigentes.filter(t=>!t.sos).reduce((a,t)=>
+    a + slotsDe(t).filter(s=>marcaDe(t,s)).length, 0);
 
   /* La grilla del tablero se calcula con la composición REAL del día:
      N pasados angostos (más angosto mientras más viejo — se van quedando
@@ -4209,9 +4245,11 @@ document.addEventListener("click",async e=>{
   }
   if(a==="dose-who"){
     if(!state.medPick) return;
-    const k = state.medPick.id + "|" + state.medPick.slot;
+    const t = state.vigentes.find(x=>x.id===state.medPick.id) || {id:state.medPick.id};
+    const k = claveDosis(t, state.medPick.slot);
     const hora = new Date().toLocaleTimeString("es-CL",{hour:"2-digit",minute:"2-digit"});
     state.meds2[k] = { por: el.dataset.q, t: hora };
+    espejoGuardar();                      // primero el fierro, después la nube
     state.meds[state.medPick.id] = (state.meds[state.medPick.id]||0) + 1;
     state.medPick = null;
     guardarMeds2();
@@ -4221,11 +4259,14 @@ document.addEventListener("click",async e=>{
     return render();
   }
   if(a==="dose-off"){
-    const k = el.dataset.id + "|" + el.dataset.slot;
-    const marca = state.meds2[k];
+    const kNueva = el.dataset.k || (el.dataset.id + "|" + el.dataset.slot);
+    const kVieja = el.dataset.id + "|" + el.dataset.slot;
+    const marca = state.meds2[kNueva] || state.meds2[kVieja];
     if(!marca) return;
     if(!confirm("¿Desmarcar esta dosis?\nQuedó registrada por " + marca.por + " a las " + (marca.t||"—") + ".")) return;
-    state.meds2[k] = 0;   // lápida: 0 = "borrada a propósito", sobrevive merges
+    state.meds2[kNueva] = 0;             // lápida en la llave estable
+    if(state.meds2[kVieja]) state.meds2[kVieja] = 0;
+    espejoGuardar();
     state.meds[el.dataset.id] = Math.max(0,(state.meds[el.dataset.id]||0) - 1);
     guardarMeds2();
     sset("meds:"+TODAY_KEY, state.meds);
