@@ -1727,7 +1727,8 @@ const diasEntre = (a,b)=>Math.round((new Date(b)-new Date(a))/86400000);
 const state = {
   view:"semana",
   meds:{},            // {tratamientoId: nDosisDadasHoy} — se mantiene por compatibilidad
-  meds2:{},           // {"tratId|HH:MM": {por, t}} — quién dio cada dosis y a qué hora
+  meds2:{},           // {"tratId|HH:MM": {por,t}} · 0 = lápida (desmarcada a propósito)
+  medsSinGuardar:false,// true si una marca aún no se confirma en la base
   medPick:null,       // dosis esperando que se responda quién la dio
   poloPick:null,      // tanda del Polo Norte esperando cuántas porciones salen
   snacks:[],          // tandas del mesón: se preparan 1-2 veces/semana, duran días
@@ -1848,7 +1849,7 @@ S.on(e => { if(e.tipo === "sync" || e.tipo === "error") setSync(S.estado.conecta
 function setSync(ok){
   state.synced = ok;
   const el = document.getElementById("sync");
-  if(el) el.innerHTML = (ok ? "<b>\u25cf</b> sincronizado" : "\u25cb local") + " \u00b7 v4.4";
+  if(el) el.innerHTML = (ok ? "<b>\u25cf</b> sincronizado" : "\u25cb local") + " \u00b7 v4.5";
 }
 
 /* Respaldo. El storage es por artifact: al republicar, la URL nueva parte
@@ -2841,6 +2842,38 @@ function tick(){
 setInterval(tick,10000);tick();
 $("#week-label").textContent = "Semana del " + monday.toLocaleDateString("es-CL",{day:"numeric",month:"long"}) + " · " + REGLA_SEMANA;
 
+/* ============ GUARDADO BLINDADO DE DOSIS ============
+   El write viaja con read-merge-write (dos cuidadores no se pisan), se
+   VERIFICA releyendo con caché limpio, reintenta 3 veces con espera, y si
+   aun así falla queda en cola (30 s) con aviso visible. Una marca de dosis
+   no puede perderse en silencio: es la línea roja de este panel.          */
+let _gm2Timer = null;
+async function guardarMeds2(){
+  const llave = "meds2:"+TODAY_KEY;
+  for(let i=0;i<3;i++){
+    try{
+      const remoto = await sget(llave) || {};
+      const fusion = Object.assign({}, remoto, state.meds2);
+      await sset(llave, fusion);
+      if(S._limpiarCache) S._limpiarCache();          // el eco debe venir de la red
+      const eco = await sget(llave) || {};
+      const ok = Object.keys(state.meds2).every(x =>
+        JSON.stringify(eco[x] === undefined ? 0 : eco[x]) ===
+        JSON.stringify(state.meds2[x] === undefined ? 0 : state.meds2[x]));
+      if(ok){
+        state.meds2 = fusion;
+        if(state.medsSinGuardar){ state.medsSinGuardar = false; render(); }
+        if(_gm2Timer){ clearTimeout(_gm2Timer); _gm2Timer = null; }
+        return true;
+      }
+    }catch(e){}
+    await new Promise(r=>setTimeout(r, 800*(i+1)));
+  }
+  if(!state.medsSinGuardar){ state.medsSinGuardar = true; render(); }
+  if(!_gm2Timer) _gm2Timer = setTimeout(()=>{ _gm2Timer=null; guardarMeds2(); }, 30000);
+  return false;
+}
+
 /* ================= CARGA COMPARTIDA ================= */
 async function loadShared(){
   const [m,m2,f,s,e,ra,rv,nv,ag,sn] = await Promise.all([
@@ -2849,7 +2882,11 @@ async function loadShared(){
   ]);
   if(Array.isArray(sn)) state.snacks = sn;
   if(m) state.meds = m;
-  if(m2) state.meds2 = m2;
+  /* Las marcas de dosis son HECHOS locales del día: una relectura del
+     servidor (tiempo real, clima guardándose, otro dispositivo) jamás debe
+     pisarlas. Se fusiona con lo local ganando; el desmarcar sobrevive
+     porque dose-off deja un 0 (lápida) en vez de borrar la llave. */
+  if(m2) state.meds2 = Object.assign({}, m2, state.meds2);
   if(f) state.falta = f;
   if(s) state.shopGot = s;
   state.events = e || {};
@@ -3608,7 +3645,7 @@ function renderSemana(){
     <div class="board" id="board" style="display:grid;grid-template-columns:${plantilla};gap:10px">${cols}</div>
     <aside class="rail rail2">
       <section class="panel">
-        <h2 style="display:flex;align-items:baseline;gap:8px">Remedios · hoy ${totalDosis?`<span class="soft">${dadasHoy}/${totalDosis} dosis</span>`:""}<button class="med-det" data-view="remedios" style="margin-left:auto;padding:0">detalle y SOS \u2192</button></h2>
+        <h2 style="display:flex;align-items:baseline;gap:8px">Remedios · hoy ${totalDosis?`<span class="soft">${dadasHoy}/${totalDosis} dosis</span>`:""}${state.medsSinGuardar?`<span style="color:#b3261e;font-weight:700;font-size:.7rem">\u26a0 guardando\u2026</span>`:""}<button class="med-det" data-view="remedios" style="margin-left:auto;padding:0">detalle y SOS \u2192</button></h2>
         ${panelRemedios()}
       </section>
       <section class="panel">
@@ -4177,7 +4214,7 @@ document.addEventListener("click",async e=>{
     state.meds2[k] = { por: el.dataset.q, t: hora };
     state.meds[state.medPick.id] = (state.meds[state.medPick.id]||0) + 1;
     state.medPick = null;
-    sset("meds2:"+TODAY_KEY, state.meds2);
+    guardarMeds2();
     sset("meds:"+TODAY_KEY, state.meds);
     sset("hist:_ultimoDia", {fecha:TODAY_KEY, dosis:state.meds});
     showToast("Dosis registrada — " + el.dataset.q + ", " + hora);
@@ -4188,9 +4225,9 @@ document.addEventListener("click",async e=>{
     const marca = state.meds2[k];
     if(!marca) return;
     if(!confirm("¿Desmarcar esta dosis?\nQuedó registrada por " + marca.por + " a las " + (marca.t||"—") + ".")) return;
-    delete state.meds2[k];
+    state.meds2[k] = 0;   // lápida: 0 = "borrada a propósito", sobrevive merges
     state.meds[el.dataset.id] = Math.max(0,(state.meds[el.dataset.id]||0) - 1);
-    sset("meds2:"+TODAY_KEY, state.meds2);
+    guardarMeds2();
     sset("meds:"+TODAY_KEY, state.meds);
     sset("hist:_ultimoDia", {fecha:TODAY_KEY, dosis:state.meds});
     return render();
