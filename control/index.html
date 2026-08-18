@@ -122,7 +122,7 @@ main{padding:14px 14px 96px}
   <button id="atras" style="display:none">← Volver</button>
   <div class="h1">CONTROL DE LA CASA</div>
   <span id="estado" class="mal">○ conectando…</span>
-  <span class="build">v3.5 · 11 ago</span>
+  <span class="build">v3.6 · 15 ago</span>
 </header>
 <main id="app"><div class="vacio">Cargando…</div></main>
 <div id="barra-guardar"><button id="guardar">Guardar el menú de la semana</button></div>
@@ -148,7 +148,7 @@ main{padding:14px 14px 96px}
    ========================================================================== */
 (function (root) {
   "use strict";
-console.log("Control de la Casa · v3.5 · 11 ago");
+console.log("Control de la Casa · v3.6 · 15 ago");
 
   /* ---- Reglas de clave del storage subyacente -----------------------------
      Sin espacios, sin / \ ' " y bajo 200 caracteres. Normalizamos en vez de
@@ -1235,6 +1235,55 @@ function fechaCortaProx(){ const d = lunesProx();
 /* La lista de Jumbo nace del menú aprobado: ingredientes de los 7 platos,
    agregados por nombre, resueltos contra el catálogo de productos de la
    casa. Las recetas sin detalle de compra quedan nombradas, no escondidas. */
+/* =====================================================================
+   PRIX · conector por link (Shopify). El carro se llena con UNA URL:
+   prixchile.cl/cart/{variantId}:{qty},... → aterriza en la pantalla de pago,
+   sin login ni sesión. Objetivo: entre aprobar y tener la orden puesta, la
+   menor cantidad de manos posible. Josefa abre el link y paga.
+   Mapa cosechado del catálogo real (products.json) el 15-ago-2026.
+   'q' = cuántas unidades Prix equivalen a UNA unidad del producto casa
+   (Prix vende casi todo granel 500 g o por unidad). Lo que Prix no tiene
+   (merluza, reineta, molida 4 %, mantequilla sin sal, especias, nueces)
+   sencillamente no aparece aquí y sigue en la lista de Jumbo.
+   ===================================================================== */
+const PRIX = {
+  arroz:               { v:54840086397233, n:"Arroz Gran Selección Grado 1 Tucapel 1 kg", p:2090, q:1 },
+  lentejas:            { v:54840279138609, n:"Lentejas 4 mm Banquete 1 kg",              p:2590, q:1 },
+  garbanzosP:          { v:54840282448177, n:"Garbanzos Sin Piel Banquete 1 kg",         p:2990, q:1 },
+  porotosT:            { v:54840244601137, n:"Porotos Tórtola Banquete 1 kg",            p:3990, q:1 },
+  arvejasC:            { v:49523960152369, n:"Arvejas Congeladas 500 g",                 p:1590, q:1 },
+  chocloG:             { v:49523964281137, n:"Choclo en Grano Congelado 500 g",          p:1590, q:1 },
+  porotosV:            { v:49523993346353, n:"Porotos Verdes Congelados 350 g",          p:1390, q:1 },
+  pechuga:             { v:52273999774001, n:"Pechuga Deshuesada Super Pollo 750 g",     p:5490, q:1 },
+  trutro:              { v:54993892147505, n:"Tuto Largo de Pollo Ariztia 800 g",        p:3390, q:1 },
+  atunAgua:            { v:55710628544817, n:"Atún al Agua Desmenuzado Esmeralda 160 g", p:790,  q:1 },
+  lecheSL:             { v:51837274784049, n:"Leche Entera Sin Lactosa Colun 1 L",       p:1250, q:1 },
+  leche:               { v:51837272883505, n:"Leche Entera Colun 1 L",                   p:1290, q:1 },
+  huevos:              { v:51795146178865, n:"Huevo Cintazul Grande Color 30 un",        p:9490, q:1 },
+  aceite:              { v:54840059429169, n:"Aceite de Oliva Extra Virgen Banquete 1 L",p:15990,q:1 },
+  tallarines:          { v:50313728033073, n:"Tallarines 87 Carozzi 400 g",              p:990,  q:1 },
+  pasta:               { v:49889150206257, n:"Espirales Carozzi 400 g",                  p:990,  q:1 },
+  zanahoria:           { v:49475195765041, n:"Zanahoria a Granel 500 g",                 p:545,  q:2 },
+  cebolla:             { v:49475051159857, n:"Cebolla 1 un",                              p:690,  q:4 },
+  "cebolla-morada-granel":{ v:49475054698801, n:"Cebolla Morada 1 un",                  p:790,  q:2 },
+  papa:                { v:49475116761393, n:"Papas a Granel 500 g",                     p:695,  q:4 },
+  limon:               { v:49475098149169, n:"Limón a Granel 500 g",                     p:895,  q:2 },
+  tomate:              { v:49475184427313, n:"Tomate Larga Vida a Granel 500 g",         p:945,  q:1 },
+  zapitaliano:         { v:50503507607857, n:"Zapallo Italiano 1 un",                    p:720,  q:1 },
+  // espinaca: Prix la tiene (49861700649265, $1.790) pero AGOTADA al cosechar 15-ago → sigue en Jumbo hasta reactivar
+  champinon:           { v:54840617763121, n:"Champiñón París Entero 200 g",             p:1790, q:1 },
+  cilantro:            { v:49813853012273, n:"Cilantro 120 g",                           p:890,  q:1 },
+  confort:             { v:50391904747825, n:"Papel Higiénico Confort 4×30 m",           p:2890, q:1 },
+  avenaI:              { v:50651009581361, n:"Avena Instantánea Vivo 700 g",             p:1990, q:1 },
+  kiwi:                { v:49474866348337, n:"Kiwi a Granel 500 g",                      p:1995, q:1 },
+  mandarina:           { v:49474878505265, n:"Mandarina a Granel 500 g",                 p:1695, q:1 },
+  pera:                { v:49474963243313, n:"Pera Packham's a Granel 500 g",            p:845,  q:1 },
+};
+function linkPrix(carroPrix){
+  if(!carroPrix || !carroPrix.length) return "";
+  return "https://prixchile.cl/cart/" + carroPrix.map(x => x.vid + ":" + x.qp).join(",");
+}
+
 function construirLista(ids){
   /* El objetivo no es recordar cucharadas: es CARGAR JUMBO. Cada ingrediente
      se traduce al producto del historial de la casa, y la frecuencia real de
@@ -1268,7 +1317,7 @@ function construirLista(ids){
     } else { mano[txt] = 1; }
   });
   const todos = Object.values(porProd).map(x =>
-    ({ n:x.n, un:x.un, precio:x.precio, platos:Object.keys(x.platos), f:x.f, c:x.c }));
+    ({ id:x.id, n:x.n, un:x.un, precio:x.precio, platos:Object.keys(x.platos), f:x.f, c:x.c }));
   const orden = (a,b)=>a.n.localeCompare(b.n);
   /* Frescos que el menú pide: SIEMPRE al carro. Sólo la despensa de baja
      frecuencia (abarrotes, conservas) queda en "revisar stock". */
@@ -1277,14 +1326,31 @@ function construirLista(ids){
   const stock = todos.filter(x => x.f<6  &&  esDespensa(x)).sort(orden);
   const num = s => Number(String(s).replace(/[^0-9]/g,"")) || 0;
   const totalCarro = carro.reduce((t,x)=>t+num(x.precio)*x.un, 0);
-  return { carro, stock, mano:Object.keys(mano).sort(), sinDet, totalCarro };
+  /* Reparto por canal: todo lo que Prix vende sale del carro Jumbo y entra al
+     link de Prix con su cantidad ya convertida a unidades Prix. Jumbo se
+     queda sólo con lo que Prix no tiene. Menos manos, misma semana. */
+  const prixCarro = [], jumboCarro = [];
+  carro.forEach(x => {
+    const px = PRIX[x.id];
+    if(px){ prixCarro.push({ id:x.id, n:px.n, vid:px.v, qp:(px.q||1)*(x.un||1), precio:px.p*(px.q||1)*(x.un||1), platos:x.platos }); }
+    else jumboCarro.push(x);
+  });
+  const totalPrix  = prixCarro.reduce((t,x)=>t+x.precio, 0);
+  const totalJumbo = jumboCarro.reduce((t,x)=>t+num(x.precio)*x.un, 0);
+  return { carro, stock, mano:Object.keys(mano).sort(), sinDet, totalCarro,
+           prixCarro, jumboCarro, totalPrix, totalJumbo, prixLink: linkPrix(prixCarro) };
 }
 function fmtCLP(v){ return "$" + Number(v||0).toLocaleString("es-CL"); }
 function textoLista(){
   const s = estado.shoplist; if(!s || !s.carro) return "";
   const linea = x => "· " + x.n + (x.un>1 ? " ×"+x.un : "") + " — " + x.precio;
-  let t = "PEDIDO JUMBO · semana del " + fechaCortaProx();
-  if(s.carro.length) t += "\n\nAL CARRO · " + fmtCLP(s.totalCarro) + "\n" + s.carro.map(linea).join("\n");
+  let t = "PEDIDO · semana del " + fechaCortaProx();
+  if(s.prixCarro && s.prixCarro.length){
+    t += "\n\nPRIX · " + fmtCLP(s.totalPrix) + " · abrir y pagar:\n" + s.prixLink
+       + "\n" + s.prixCarro.map(x => "· " + x.n + (x.qp>1 ? " ×"+x.qp : "")).join("\n");
+  }
+  const jc = s.jumboCarro || s.carro;
+  if(jc.length) t += "\n\nJUMBO · " + fmtCLP(s.totalJumbo!=null ? s.totalJumbo : s.totalCarro) + "\n" + jc.map(linea).join("\n");
   if(s.stock.length) t += "\n\nREVISAR STOCK (compra ocasional)\n" + s.stock.map(linea).join("\n");
   if(s.mano.length)  t += "\n\nA MANO\n· " + s.mano.join(" · ");
   if(s.sinDet && s.sinDet.length) t += "\n\n(sin ingredientes cargados: " + s.sinDet.join(", ") + ")";
@@ -1387,10 +1453,18 @@ function vistaHome(){
     const fila = x => '<div class="fitem"><div class="txt">' + esc(x.n) + (x.un>1 ? ' ×'+x.un : '')
       + ' <span class="sub">' + esc(x.precio)
       + (x.platos && x.platos.length ? ' · para: ' + esc(x.platos.join(", ")) : '') + '</span></div></div>';
-    h += '<div class="tarjeta"><div class="tt">PEDIDO JUMBO · SEMANA DEL '
+    const filaP = x => '<div class="fitem"><div class="txt">' + esc(x.n) + (x.qp>1 ? ' ×'+x.qp : '')
+      + ' <span class="sub">' + fmtCLP(x.precio)
+      + (x.platos && x.platos.length ? ' · para: ' + esc(x.platos.join(", ")) : '') + '</span></div></div>';
+    const pc = s.prixCarro || [], jc = s.jumboCarro || s.carro;
+    h += '<div class="tarjeta"><div class="tt">PEDIDO · SEMANA DEL '
       + fechaCortaProx().toUpperCase() + '</div>'
-      + (s.carro.length ? '<div class="mini" style="font-weight:800">AL CARRO · ' + fmtCLP(s.totalCarro) + '</div>'
-          + '<div class="flist">' + s.carro.map(fila).join("") + '</div>' : '')
+      + (pc.length ? '<div class="mini" style="font-weight:800">PRIX · ' + fmtCLP(s.totalPrix) + ' · llega el mismo día</div>'
+          + '<div class="flist">' + pc.map(filaP).join("") + '</div>'
+          + '<div class="botones"><a class="primario" href="' + esc(s.prixLink) + '" target="_blank" rel="noopener" '
+          + 'style="display:block;text-align:center;text-decoration:none">Pagar en Prix \u2192</a></div>' : '')
+      + (jc.length ? '<div class="mini" style="font-weight:800;margin-top:10px">JUMBO · ' + fmtCLP(s.totalJumbo!=null ? s.totalJumbo : s.totalCarro) + '</div>'
+          + '<div class="flist">' + jc.map(fila).join("") + '</div>' : '')
       + (s.stock.length ? '<div class="mini" style="font-weight:800;margin-top:8px">REVISAR STOCK · compra ocasional</div>'
           + '<div class="flist">' + s.stock.map(fila).join("") + '</div>' : '')
       + (s.mano.length ? '<div class="mini" style="margin-top:8px"><b>A mano:</b> ' + esc(s.mano.join(" · ")) + '</div>' : '')
